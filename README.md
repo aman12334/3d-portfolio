@@ -168,6 +168,3 @@ You can adapt this portfolio to your own profile by updating the following areas
 
 3. Deploy the generated `dist/` folder to your hosting provider (for example Vercel, Netlify, or Cloudflare Pages).
 
-## License
-
-This project is open source and available under the [MIT License](LICENSE).
