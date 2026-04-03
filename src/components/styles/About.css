@@ -8,6 +8,9 @@
   height: auto;
   width: var(--cWidth);
   margin: auto;
+  transform: translateY(calc(var(--mindpipe-beat) * -5px));
+  filter: saturate(calc(1 + var(--mindpipe-intensity) * 0.3));
+  transition: transform 0.25s ease, filter 0.25s ease;
 }
 .about-me {
   padding: 50px 0px;
@@ -21,13 +24,15 @@
   letter-spacing: 7px;
   font-weight: 400;
   color: var(--accentColor);
+  text-shadow: 0 0 calc(var(--mindpipe-intensity) * 12px)
+    rgba(47, 111, 182, calc(var(--mindpipe-intensity) * 0.5));
 }
 
 .about-me p {
   font-size: clamp(24px, 1.8vw, 36px);
   font-weight: 600;
   line-height: 1.35;
-  letter-spacing: 1px;
+  letter-spacing: calc(1px + var(--mindpipe-volume) * 1px);
   color: var(--textPrimary);
 }
 

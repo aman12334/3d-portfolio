@@ -30,20 +30,11 @@
   font-weight: 600;
   cursor: pointer;
 }
-.navbar-connect {
-  position: absolute;
-  display: none;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 17px;
-  letter-spacing: 1px;
-  font-weight: 500;
-}
 .navbar-title {
   font-weight: 700;
-  font-size: 18px;
+  font-size: 17px;
   letter-spacing: 0.2px;
+  white-space: nowrap;
 }
 @media only screen and (min-width: 500px) {
   .header {
@@ -58,12 +49,7 @@
     color: var(--textPrimary);
   }
   .navbar-title {
-    font-size: 20px;
-  }
-}
-@media only screen and (min-width: 900px) {
-  .navbar-connect {
-    display: block;
+    font-size: 18px;
   }
 }
 @media only screen and (min-width: 1200px) {
@@ -72,9 +58,6 @@
   }
   .header ul {
     column-gap: 80px;
-    font-size: 16px;
-  }
-  .navbar-connect {
     font-size: 16px;
   }
   .navbar-title {

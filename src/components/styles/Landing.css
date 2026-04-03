@@ -12,6 +12,9 @@
   height: 100%;
   position: relative;
   max-width: var(--cMaxWidth);
+  filter: saturate(calc(1 + var(--mindpipe-intensity) * 0.4));
+  transform: translateY(calc(var(--mindpipe-beat) * -4px));
+  transition: transform 180ms linear, filter 180ms linear;
 }
 
 .landing-circle1 {
@@ -191,6 +194,8 @@
   font-weight: 500;
   font-family: "Geist", sans-serif;
   color: var(--textPrimary);
+  text-shadow: 0 0 calc(var(--mindpipe-intensity) * 14px)
+    rgba(47, 111, 182, calc(var(--mindpipe-intensity) * 0.55));
 }
 
 /* .landing-intro h1 span {
@@ -244,6 +249,8 @@ h2.landing-info-h2 {
   font-weight: 600;
   position: relative;
   margin-left: -5px;
+  letter-spacing: calc(2px + var(--mindpipe-volume) * 1.6px);
+  transition: letter-spacing 180ms linear;
 }
 
 .landing-h2-2 {

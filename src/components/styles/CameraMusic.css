@@ -1,82 +1,90 @@
-.camera-music-section {
-  padding: 90px 0 70px;
-  background: #ffffff;
-  position: relative;
-  z-index: 40;
+:root {
+  --mindpipe-volume: 0;
+  --mindpipe-beat: 0;
+  --mindpipe-intensity: 0;
+}
+
+.camera-music-panel {
+  position: fixed;
+  right: 14px;
+  bottom: 14px;
+  transform: none;
+  z-index: 120;
+  width: min(300px, calc(100vw - 20px));
+  max-height: calc(100vh - 24px);
   pointer-events: auto;
 }
 
-.camera-music-container {
-  margin: 0 auto;
-}
-
-.camera-music-container h2 {
-  margin: 0;
-  font-size: 62px;
-  font-weight: 500;
-}
-
-.camera-music-container h2 span {
-  color: var(--accentColor);
-}
-
-.camera-music-container p {
-  margin: 14px 0 0;
-  color: var(--textSecondary);
-  max-width: 700px;
-  font-size: 18px;
-  line-height: 1.5;
-}
-
-.camera-music-controls {
-  margin-top: 28px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-
-.camera-music-controls button {
+.camera-music-shell {
   border: 1px solid var(--borderColor);
-  background: rgba(47, 111, 182, 0.06);
+  background: rgba(255, 255, 255, 0.94);
+  border-radius: 18px;
+  padding: 12px;
+  box-shadow: 0 16px 34px rgba(47, 111, 182, 0.22);
+  backdrop-filter: blur(7px);
+  max-height: calc(100vh - 24px);
+  overflow: auto;
+}
+
+.camera-music-shell h3 {
+  margin: 0 0 10px;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--textPrimary);
+}
+
+.camera-music-start {
+  width: 100%;
+  border: 1px solid var(--borderColor);
+  background: rgba(47, 111, 182, 0.12);
   color: var(--textPrimary);
   border-radius: 999px;
-  padding: 12px 18px;
-  font-size: 15px;
+  padding: 10px 14px;
+  font-size: 14px;
   cursor: pointer;
   transition: all 0.2s ease-out;
 }
 
-.camera-music-controls button:hover:not(:disabled) {
+.camera-music-start:hover {
   border-color: var(--accentColor);
   color: var(--accentColor);
 }
 
-.camera-music-controls button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+.camera-music-instructions-title {
+  margin: 12px 0 6px;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--textSecondary);
+}
+
+.camera-music-instructions {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--textSecondary);
 }
 
 .camera-music-error {
-  margin-top: 14px;
+  margin-top: 10px;
   color: #b24a4a;
-  font-size: 16px;
+  font-size: 13px;
 }
 
 .camera-music-status {
-  margin-top: 14px;
+  margin-top: 10px;
   color: var(--textSecondary);
-  font-size: 15px;
+  font-size: 12px;
 }
 
 .camera-music-stage {
-  margin-top: 24px;
+  margin-top: 10px;
   position: relative;
   width: 100%;
-  max-width: 980px;
-  border-radius: 18px;
+  border-radius: 12px;
   overflow: hidden;
   border: 1px solid var(--borderColor);
-  background: #000;
+  background: var(--backgroundColor);
   aspect-ratio: 16 / 9;
 }
 
@@ -102,58 +110,27 @@
   inset: 0;
   display: grid;
   place-items: center;
-  color: #dae5f3;
-  font-size: 17px;
-  background: rgba(0, 0, 0, 0.3);
+  color: var(--textPrimary);
+  font-size: 12px;
+  text-align: center;
+  padding: 0 14px;
+  background: rgba(255, 255, 255, 0.62);
 }
 
-.camera-music-meters {
-  margin-top: 20px;
-  max-width: 980px;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-}
-
-.meter span {
-  display: block;
-  margin-bottom: 8px;
-  font-size: 14px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+.camera-music-mini-meters {
+  margin-top: 8px;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11px;
   color: var(--textSecondary);
 }
 
-.meter-bar {
-  height: 8px;
-  width: 100%;
-  background: #dce6f3;
-  border-radius: 999px;
-  overflow: hidden;
-}
-
-.meter-bar i {
-  display: block;
-  height: 100%;
-  width: 100%;
-  transform-origin: left center;
-  background: linear-gradient(90deg, #2f6fb6, #6d99cd);
-}
-
-@media only screen and (max-width: 1025px) {
-  .camera-music-section {
-    padding: 60px 0;
-  }
-
-  .camera-music-container h2 {
-    font-size: 42px;
-  }
-
-  .camera-music-container p {
-    font-size: 16px;
-  }
-
-  .camera-music-meters {
-    grid-template-columns: 1fr;
+@media only screen and (max-width: 900px) {
+  .camera-music-panel {
+    bottom: 12px;
+    right: 12px;
+    transform: none;
+    width: min(290px, calc(100vw - 16px));
   }
 }

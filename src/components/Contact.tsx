@@ -55,20 +55,13 @@ const Contact = () => {
               LinkedIn <MdArrowOutward />
             </a>
             <a
-              href="https://www.amantiwarri.com/"
+              href="https://www.youtube.com/@amantiwarri"
               target="_blank"
               rel="noreferrer"
               data-cursor="disable"
               className="contact-social"
             >
-              Website <MdArrowOutward />
-            </a>
-            <a
-              href="mailto:amant10@umd.edu"
-              data-cursor="disable"
-              className="contact-social"
-            >
-              Email <MdArrowOutward />
+              YouTube <MdArrowOutward />
             </a>
           </div>
           <div className="contact-box">

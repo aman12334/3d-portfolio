@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@chenglou/pretext": "^0.0.4",
     "@gsap/react": "^2.1.1",
     "@mediapipe/tasks-vision": "^0.10.34",
     "@react-three/cannon": "^6.6.0",
@@ -19,7 +20,10 @@
     "@react-three/rapier": "^1.5.0",
     "@types/three": "^0.168.0",
     "@vercel/analytics": "^1.4.1",
+    "cobe": "^2.0.1",
     "gsap": "^3.12.7",
+    "lucide-react": "^1.7.0",
+    "motion": "^12.38.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-fast-marquee": "^1.6.5",

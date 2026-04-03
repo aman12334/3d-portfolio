@@ -6,7 +6,7 @@
       rgba(94, 234, 212, 0.08),
       transparent 35%
     ),
-    #060b14;
+    var(--backgroundColor);
 }
 
 .scroll-video-head {
@@ -28,7 +28,7 @@
 
 .scroll-video-head p {
   margin: 14px 0 0;
-  color: #a9acb7;
+  color: var(--textSecondary);
   font-size: 18px;
 }
 
@@ -39,9 +39,9 @@
   margin: 52px auto 0;
   border-radius: 18px;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: #000;
-  box-shadow: 0 18px 65px rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--borderColor);
+  background: var(--backgroundColor);
+  box-shadow: 0 18px 65px rgba(47, 111, 182, 0.14);
 }
 
 .scroll-video-player {
@@ -56,7 +56,7 @@
   aspect-ratio: 16 / 9;
   display: grid;
   place-items: center;
-  color: #d8dbe3;
+  color: var(--textSecondary);
   font-size: 16px;
   text-align: center;
   padding: 20px;
@@ -68,7 +68,7 @@
   left: 0;
   width: 100%;
   height: 5px;
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(47, 111, 182, 0.18);
   overflow: hidden;
 }
 

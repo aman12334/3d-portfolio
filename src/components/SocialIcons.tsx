@@ -1,12 +1,10 @@
 import {
   FaEnvelope,
-  FaGlobe,
   FaGithub,
   FaLinkedinIn,
+  FaYoutube,
 } from "react-icons/fa6";
 import "./styles/SocialIcons.css";
-import { TbNotes } from "react-icons/tb";
-import HoverLinks from "./HoverLinks";
 
 const SocialIcons = () => {
   return (
@@ -32,30 +30,19 @@ const SocialIcons = () => {
         </span>
         <span>
           <a
-            href="https://www.amantiwarri.com/"
+            href="https://www.youtube.com/@amantiwarri"
             target="_blank"
             rel="noreferrer"
           >
-            <FaGlobe />
+            <FaYoutube />
           </a>
         </span>
         <span>
-          <a
-            href="mailto:amant10@umd.edu"
-          >
+          <a href="mailto:amant10@umd.edu">
             <FaEnvelope />
           </a>
         </span>
       </div>
-      <a
-        className="resume-button"
-        href="mailto:amant10@umd.edu"
-      >
-        <HoverLinks text="EMAIL" />
-        <span>
-          <TbNotes />
-        </span>
-      </a>
     </div>
   );
 };

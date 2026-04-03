@@ -10,10 +10,100 @@
   justify-content: center;
 }
 
+.loading-screen-globe {
+  background: radial-gradient(circle at 50% 35%, #f9fcff 0%, #edf5fe 55%, #dfebfa 100%);
+  transition: opacity 0.75s ease, transform 0.75s ease;
+}
+
+.loading-screen-globe-out {
+  opacity: 0;
+  transform: scale(1.03);
+  pointer-events: none;
+}
+
+.loading-globe-shell {
+  width: min(760px, calc(100vw - 40px));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  position: relative;
+}
+
+.cobe-globe-wrap.loading-globe {
+  width: min(560px, calc(100vw - 70px));
+  aspect-ratio: 1 / 1;
+  border-radius: 999px;
+  box-shadow: 0 26px 52px rgba(15, 47, 95, 0.14);
+}
+
+.loading-map-label {
+  position: absolute;
+  z-index: 3;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(140, 171, 208, 0.9);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #1a4a84;
+  box-shadow: 0 8px 16px rgba(15, 47, 95, 0.12);
+}
+
+.loading-map-label-mumbai {
+  left: 15%;
+  top: 18%;
+}
+
+.loading-map-label-maryland {
+  right: 13%;
+  top: 15%;
+}
+
+.loading-route-label {
+  margin-top: 4px;
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #2f6fb6;
+  opacity: 0.9;
+}
+
+.loading-typed-line {
+  min-height: 42px;
+  margin-top: 4px;
+  font-size: clamp(18px, 1.1rem + 0.6vw, 30px);
+  line-height: 1.25;
+  text-align: center;
+  color: #0f2f5f;
+  font-weight: 500;
+}
+
+.loading-typed-caret {
+  display: inline-block;
+  margin-left: 4px;
+  animation: loadingTypeCaret 0.85s steps(1, end) infinite;
+}
+
+.loading-progress-inline {
+  margin-top: 4px;
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #3a6292;
+}
+
+@keyframes loadingTypeCaret {
+  50% {
+    opacity: 0;
+  }
+}
+
 .loading-button {
   padding: 20px 50px;
   border-radius: 100px;
-  background-color: #000;
+  background-color: var(--backgroundColor);
   overflow: hidden;
   font-size: 18px;
   font-weight: 500;
@@ -52,7 +142,7 @@
   min-width: 0px;
   min-height: 0px;
   border-radius: 100px;
-  background-color: #000;
+  background-color: var(--backgroundColor);
   overflow: hidden;
   transition: 0.8s ease-in-out;
   transition-delay: 0.2s;
@@ -101,7 +191,7 @@
 
 .loading-content {
   position: relative;
-  background-color: #000;
+  background-color: var(--backgroundColor);
   width: 100%;
   overflow: hidden;
   transition: 0.6s;
@@ -210,13 +300,14 @@
   left: 50%;
   transform: translateX(-50%);
   top: 0;
-  color: var(--backgroundColor);
+  color: var(--textPrimary);
 }
 
 .loader-title {
   font-weight: 700;
   font-size: 14px;
   letter-spacing: 0.2px;
+  white-space: nowrap;
 }
 
 @keyframes blink {
@@ -288,7 +379,7 @@
   position: relative;
   width: 10px;
   height: 60px;
-  background-color: #000;
+  background-color: var(--textPrimary);
   display: block;
 }
 
@@ -316,27 +407,120 @@
   left: 0;
   width: 100%;
   transform: translateY(-50%);
-  color: var(--backgroundColor);
-  font-size: 60px;
-  font-weight: 600;
-  text-transform: uppercase;
+  display: flex;
+  justify-content: center;
 }
 
-.loading-marquee span {
-  padding: 0px 50px;
+.departure-board {
+  width: min(1180px, calc(100% - 70px));
+  border-radius: 14px;
+  border: 1px solid #244268;
+  background: linear-gradient(180deg, #0f2138 0%, #0d1b2f 100%);
+  box-shadow: 0 26px 48px rgba(15, 28, 49, 0.35);
+  color: #dce8f8;
+  font-family: "Geist", "Noto Sans", "Noto Sans Devanagari", "Noto Sans CJK JP",
+    "Noto Sans CJK SC", "Noto Sans KR", sans-serif;
+}
+
+.departure-board-head,
+.departure-row {
+  display: grid;
+  grid-template-columns: 100px 110px minmax(280px, 1fr) 80px 130px;
+  align-items: center;
+  column-gap: 16px;
+}
+
+.departure-board-head {
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #8fb1dd;
+  padding: 14px 18px 12px;
+  border-bottom: 1px solid #284a76;
+}
+
+.departure-board-body {
+  height: 220px;
+  overflow: hidden;
   position: relative;
 }
 
-.loading-marquee span::before {
-  content: "";
-  width: 20px;
-  height: 20px;
-  background-color: var(--backgroundColor);
-  position: absolute;
-  top: 50%;
-  border-radius: 50px;
-  left: 0px;
-  transform: translate(-50%, -50%);
+.departure-board-track {
+  animation: departureScroll 28s linear infinite;
+}
+
+.departure-row {
+  min-height: 42px;
+  padding: 0 18px;
+  border-bottom: 1px solid rgba(56, 87, 122, 0.45);
+}
+
+.departure-cell {
+  font-size: 14px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.departure-cell-text {
+  display: flex;
+  gap: 4px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.departure-flap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.03em;
+  min-width: 1.03em;
+  height: 1.28em;
+  border-radius: 2px;
+  border: 1px solid #31598d;
+  background: linear-gradient(180deg, #223f67 0%, #172d4a 100%);
+  color: #f0f6ff;
+  font-size: 14px;
+  line-height: 1;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.09);
+  transform-origin: center;
+  animation: flapTick 1.8s steps(2, end) infinite;
+  animation-delay: calc(var(--char-index, 0) * 70ms);
+}
+
+.departure-cell-status {
+  color: #91d7ff;
+  font-size: 12px;
+}
+
+@keyframes flapTick {
+  0% {
+    transform: rotateX(0deg);
+    filter: brightness(1);
+  }
+
+  15% {
+    transform: rotateX(90deg);
+    filter: brightness(0.75);
+  }
+
+  30% {
+    transform: rotateX(0deg);
+    filter: brightness(1.03);
+  }
+
+  100% {
+    transform: rotateX(0deg);
+    filter: brightness(1);
+  }
+}
+
+@keyframes departureScroll {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(-50%);
+  }
 }
 
 @keyframes ball25 {
@@ -387,8 +571,50 @@
     left: 70px;
   }
 
-  .loading-marquee {
-    font-size: 100px;
+  .departure-board-body {
+    height: 280px;
+  }
+}
+
+@media only screen and (max-width: 900px) {
+  .departure-board {
+    width: calc(100% - 28px);
+  }
+
+  .departure-board-head,
+  .departure-row {
+    grid-template-columns: 82px 92px minmax(180px, 1fr) 62px 95px;
+    column-gap: 10px;
+  }
+
+  .departure-board-head {
+    font-size: 10px;
+    padding: 10px 10px 8px;
+  }
+
+  .departure-row {
+    min-height: 36px;
+    padding: 0 10px;
+  }
+
+  .departure-cell,
+  .departure-flap {
+    font-size: 11px;
+  }
+
+  .loading-map-label {
+    font-size: 10px;
+    padding: 3px 8px;
+  }
+
+  .loading-map-label-mumbai {
+    left: 11%;
+    top: 19%;
+  }
+
+  .loading-map-label-maryland {
+    right: 11%;
+    top: 15%;
   }
 }
 
