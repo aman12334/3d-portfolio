@@ -1,5 +1,6 @@
 import { PropsWithChildren } from "react";
 import "./styles/Landing.css";
+import PretextReveal from "./ui/PretextReveal";
 
 const Landing = ({ children }: PropsWithChildren) => {
   return (
@@ -7,7 +8,7 @@ const Landing = ({ children }: PropsWithChildren) => {
       <div className="landing-section" id="landingDiv">
         <div className="landing-container">
           <div className="landing-intro">
-            <h2>Hello! I'm</h2>
+            <PretextReveal as="h2" text="Hello! I'm" />
             <h1>
               AMAN
               <br />
@@ -15,7 +16,7 @@ const Landing = ({ children }: PropsWithChildren) => {
             </h1>
           </div>
           <div className="landing-info">
-            <h3>Product Manager</h3>
+            <PretextReveal as="h3" text="Product Manager" />
             <h2 className="landing-info-h2">
               <div className="landing-h2-1">Platforms</div>
               <div className="landing-h2-2">AI Workflows</div>

@@ -91,8 +91,7 @@ const projects: Project[] = [
     tools:
       "Pet services booking app with personalized onboarding, location-based discovery, ratings, real-time booking, and rescheduling reminders.",
     link: "https://www.youtube.com/shorts/U0v8PF6nVPc",
-    tileImage:
-      "https://images.unsplash.com/photo-1601758123927-196f49d7f5f3?auto=format&fit=crop&w=1200&q=80",
+    tileImage: "https://img.youtube.com/vi/U0v8PF6nVPc/hqdefault.jpg",
     icon: <PawPrint size={18} />,
     mediaType: "youtube",
     embedUrl: "https://www.youtube.com/embed/U0v8PF6nVPc",
@@ -271,29 +270,29 @@ const Work = () => {
                 </motion.button>
               ))}
             </div>
-          </div>
-          <div className="work-stack-steps" aria-label="Project selector">
-            {projects.map((project, i) => (
-              <button
-                key={`${project.title}-step`}
-                type="button"
-                className={`work-stack-step ${i === activeIndex ? "work-stack-step-active" : ""}`}
-                onMouseEnter={() => {
-                  setHoveredIndex(i);
-                  setActiveIndex(i);
-                }}
-                onFocus={() => {
-                  setHoveredIndex(i);
-                  setActiveIndex(i);
-                }}
-                onClick={() => {
-                  setHoveredIndex(i);
-                  setActiveIndex(i);
-                }}
-                aria-label={`Select ${project.title}`}
-                aria-pressed={i === activeIndex}
-              />
-            ))}
+            <div className="work-stack-steps" aria-label="Project selector">
+              {projects.map((project, i) => (
+                <button
+                  key={`${project.title}-step`}
+                  type="button"
+                  className={`work-stack-step ${i === activeIndex ? "work-stack-step-active" : ""}`}
+                  onMouseEnter={() => {
+                    setHoveredIndex(i);
+                    setActiveIndex(i);
+                  }}
+                  onFocus={() => {
+                    setHoveredIndex(i);
+                    setActiveIndex(i);
+                  }}
+                  onClick={() => {
+                    setHoveredIndex(i);
+                    setActiveIndex(i);
+                  }}
+                  aria-label={`Select ${project.title}`}
+                  aria-pressed={i === activeIndex}
+                />
+              ))}
+            </div>
           </div>
 
           <motion.article

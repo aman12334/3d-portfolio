@@ -1,11 +1,12 @@
 import { MdArrowOutward, MdCopyright } from "react-icons/md";
 import "./styles/Contact.css";
+import PretextReveal from "./ui/PretextReveal";
 
 const Contact = () => {
   return (
     <div className="contact-section section-container" id="contact">
       <div className="contact-container">
-        <h3>Contact</h3>
+        <PretextReveal as="h3" text="Contact" />
         <div className="contact-flex">
           <div className="contact-box">
             <h4>Connect</h4>

@@ -9,6 +9,7 @@ import {
   CylinderCollider,
   RapierRigidBody,
 } from "@react-three/rapier";
+import PretextReveal from "./ui/PretextReveal";
 
 const SKILLS = [
   "SQL",
@@ -290,7 +291,7 @@ const TechStack = () => {
 
   return (
     <div className="techstack">
-      <h2>My Skillset</h2>
+      <PretextReveal as="h2" text="My Skillset" />
 
       <Canvas
         dpr={[1, 1.25]}

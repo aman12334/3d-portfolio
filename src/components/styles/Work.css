@@ -43,11 +43,16 @@
 }
 
 .work-stack-steps {
-  margin-top: 12px;
+  position: absolute;
+  left: 50%;
+  bottom: 8px;
+  transform: translateX(-50%);
   display: flex;
   justify-content: center;
   align-items: center;
   gap: 8px;
+  z-index: 20;
+  pointer-events: auto;
 }
 
 .work-stack-step {
@@ -327,6 +332,10 @@
 
   .work-stack-stage {
     height: 300px;
+  }
+
+  .work-stack-steps {
+    bottom: 4px;
   }
 
   .work-stack-tile {

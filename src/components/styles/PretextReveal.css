@@ -1,0 +1,18 @@
+.pretext-reveal {
+  display: block;
+}
+
+.pretext-reveal-line {
+  display: block;
+  opacity: 0;
+  transform: translateY(9px);
+  animation: pretext-reveal-in 620ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  will-change: transform, opacity;
+}
+
+@keyframes pretext-reveal-in {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

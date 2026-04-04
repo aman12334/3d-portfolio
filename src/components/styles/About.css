@@ -4,6 +4,7 @@
   justify-content: left;
   place-items: center;
   position: relative;
+  z-index: 10;
   opacity: 1;
   height: auto;
   width: var(--cWidth);
@@ -17,6 +18,8 @@
   padding-bottom: 0;
   width: 500px;
   max-width: calc(100% - 15px);
+  position: relative;
+  z-index: 11;
 }
 .about-me h3 {
   font-size: 25px;
@@ -34,6 +37,18 @@
   line-height: 1.35;
   letter-spacing: calc(1px + var(--mindpipe-volume) * 1px);
   color: var(--textPrimary);
+}
+
+.about-pretext-para {
+  position: relative;
+}
+
+.about-pretext-para > span {
+  display: block;
+}
+
+.about-static-para {
+  white-space: pre-wrap;
 }
 
 @media only screen and (min-width: 600px) {
