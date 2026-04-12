@@ -1,6 +1,5 @@
 import { lazy, PropsWithChildren, Suspense, useEffect, useState } from "react";
 import About from "./About";
-import CameraMusic from "./CameraMusic";
 import Career from "./Career";
 import Contact from "./Contact";
 import Cursor from "./Cursor";
@@ -9,6 +8,8 @@ import Navbar from "./Navbar";
 import SocialIcons from "./SocialIcons";
 import WhatIDo from "./WhatIDo";
 import Work from "./Work";
+import GestureControlOverlay from "./GestureControlOverlay";
+import GestureOperaLayer from "./GestureOperaLayer";
 import setSplitText from "./utils/splitText";
 const TechStack = lazy(() => import("./TechStack"));
 
@@ -31,6 +32,8 @@ const MainContainer = ({ children }: PropsWithChildren) => {
 
   return (
     <div className="container-main">
+      <GestureControlOverlay />
+      <GestureOperaLayer />
       <Cursor />
       <Navbar />
       <SocialIcons />
@@ -40,7 +43,6 @@ const MainContainer = ({ children }: PropsWithChildren) => {
           <div className="container-main">
             <Landing>{!isDesktopView && children}</Landing>
             <About />
-            <CameraMusic />
             <WhatIDo />
             <Career />
             <Work />

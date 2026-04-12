@@ -23,6 +23,11 @@
   --textPrimary: #0f2f5f;
   --textSecondary: #3a6292;
   --borderColor: #bfd0e6;
+  --glassBg: rgba(255, 255, 255, 0.34);
+  --glassBgStrong: rgba(255, 255, 255, 0.58);
+  --glassBorder: rgba(255, 255, 255, 0.72);
+  --glassShadow: 0 14px 34px rgba(15, 47, 95, 0.14);
+  --glassBlur: blur(14px) saturate(170%);
   --vh: 100vh;
   --vh: 100svh;
 }

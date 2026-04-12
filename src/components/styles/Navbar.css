@@ -29,12 +29,26 @@
   color: var(--textSecondary);
   font-weight: 600;
   cursor: pointer;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  padding: 8px 13px;
+  background: rgba(255, 255, 255, 0.28);
+  transition: transform 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.header ul li:hover {
+  transform: translateY(-1px);
+  border-color: rgba(255, 255, 255, 0.78);
+  background: rgba(255, 255, 255, 0.42);
 }
 .navbar-title {
   font-weight: 700;
   font-size: 17px;
   letter-spacing: 0.2px;
   white-space: nowrap;
+  border-radius: 999px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.34);
 }
 @media only screen and (min-width: 500px) {
   .header {
@@ -57,7 +71,7 @@
     padding: 35px 0px;
   }
   .header ul {
-    column-gap: 80px;
+    column-gap: 58px;
     font-size: 16px;
   }
   .navbar-title {

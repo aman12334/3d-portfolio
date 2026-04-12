@@ -1,0 +1,52 @@
+.gesture-opera-layer {
+  position: fixed;
+  left: 14px;
+  bottom: 14px;
+  z-index: 10030;
+  width: min(320px, calc(100vw - 28px));
+  border-radius: 16px;
+  border: 1px solid var(--glassBorder);
+  background: linear-gradient(145deg, var(--glassBgStrong), var(--glassBg));
+  box-shadow: var(--glassShadow), inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  backdrop-filter: var(--glassBlur);
+  -webkit-backdrop-filter: var(--glassBlur);
+  padding: 12px 14px;
+  pointer-events: none;
+}
+
+.gesture-opera-chip {
+  width: fit-content;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.75);
+  background: rgba(255, 255, 255, 0.45);
+  color: var(--textPrimary);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.gesture-opera-layer p {
+  margin: 8px 0 0;
+  color: var(--textPrimary);
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.gesture-opera-meters {
+  margin-top: 8px;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--textSecondary);
+  font-size: 12px;
+}
+
+@media (max-width: 900px) {
+  .gesture-opera-layer {
+    left: 10px;
+    bottom: 10px;
+    padding: 10px 12px;
+  }
+}

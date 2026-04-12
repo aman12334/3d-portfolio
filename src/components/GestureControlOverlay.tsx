@@ -274,6 +274,16 @@ const GestureControlOverlay = () => {
     return resolveFromHitElements(hitElements);
   };
 
+  const resolveActionableTarget = (targetElement: HTMLElement) => {
+    const actionable = targetElement.closest(
+      "a, button, [data-href], [data-scroll-target], [role='button'], [tabindex], iframe, video"
+    );
+    if (actionable instanceof HTMLElement && !actionable.closest("[data-gesture-ui]")) {
+      return actionable;
+    }
+    return targetElement;
+  };
+
   const forceReactClick = (targetElement: HTMLElement) => {
     const reactKey = Object.keys(targetElement).find((k) => k.startsWith("__reactProps$"));
     if (!reactKey) return false;
@@ -343,16 +353,15 @@ const GestureControlOverlay = () => {
     window.setTimeout(() => {
       resolvedTarget.style.outline = "";
     }, 500);
-    if (typeof resolvedTarget.focus === "function") {
-      resolvedTarget.focus({ preventScroll: true });
+    const actionableTarget = resolveActionableTarget(resolvedTarget);
+
+    if (typeof actionableTarget.focus === "function") {
+      actionableTarget.focus({ preventScroll: true });
     }
 
-    const clickable = resolvedTarget.closest("a, button, [data-href], [data-scroll-target]") as
-      | HTMLElement
-      | null;
-    const dataHref = clickable?.getAttribute("data-href");
-    const dataScrollTarget = clickable?.getAttribute("data-scroll-target");
-    const href = clickable?.getAttribute("href");
+    const dataHref = actionableTarget.getAttribute("data-href");
+    const dataScrollTarget = actionableTarget.getAttribute("data-scroll-target");
+    const href = actionableTarget.getAttribute("href");
 
     const targetSection =
       dataHref || dataScrollTarget || (href && href.startsWith("#") ? href : null);
@@ -377,19 +386,48 @@ const GestureControlOverlay = () => {
       }
 
       lastClickAtRef.current = now;
+      window.dispatchEvent(
+        new CustomEvent("gesture-click", {
+          detail: { x: clickX, y: clickY, target: targetSection },
+        })
+      );
       return true;
     }
 
-    if (forceReactClick(resolvedTarget)) {
+    if (forceReactClick(actionableTarget) || forceReactClick(resolvedTarget)) {
       lastClickAtRef.current = now;
+      window.dispatchEvent(
+        new CustomEvent("gesture-click", {
+          detail: {
+            x: clickX,
+            y: clickY,
+            target:
+              actionableTarget.getAttribute("href") ||
+              actionableTarget.getAttribute("data-href") ||
+              actionableTarget.tagName.toLowerCase(),
+          },
+        })
+      );
       return true;
     }
 
-    dispatchNativeClick(resolvedTarget, clickX, clickY);
-    if (resolvedTarget.tagName.toLowerCase() === "iframe") {
-      resolvedTarget.focus();
+    dispatchNativeClick(actionableTarget, clickX, clickY);
+    if (actionableTarget.tagName.toLowerCase() === "iframe") {
+      actionableTarget.focus();
     }
     lastClickAtRef.current = now;
+    window.dispatchEvent(
+      new CustomEvent("gesture-click", {
+        detail: {
+          x: clickX,
+          y: clickY,
+          target:
+            actionableTarget.getAttribute("href") ||
+            actionableTarget.getAttribute("data-href") ||
+            actionableTarget.tagName.toLowerCase(),
+        },
+      })
+    );
     return true;
   };
 
@@ -459,6 +497,7 @@ const GestureControlOverlay = () => {
 
     const cursor = cursorRef.current;
     const isPinching = isPinchingRef.current;
+    let frameScrollDelta = 0;
     if (cursor) {
       cursor.style.transform = `translate(${currentCursorXRef.current}px, ${currentCursorYRef.current}px) scale(${isPinching ? 0.5 : 1})`;
       cursor.style.opacity = handDetectedRef.current ? "1" : "0.45";
@@ -480,6 +519,9 @@ const GestureControlOverlay = () => {
         }
       }
     } else if (isPinching) {
+      const frameDrag = currentCursorYRef.current - prevPinchYRef.current;
+      prevPinchYRef.current = currentCursorYRef.current;
+      frameScrollDelta = -frameDrag * 2.5;
       const dragDistance = currentCursorYRef.current - pinchStartYRef.current;
       const scrollTarget = initialScrollYRef.current - dragDistance * 2.5;
       const smoother = ScrollSmoother.get() || navbarSmoother;
@@ -499,12 +541,17 @@ const GestureControlOverlay = () => {
     }
 
     prevPinchingRef.current = isPinching;
+    if (!isPinching) {
+      prevPinchYRef.current = currentCursorYRef.current;
+    }
 
     window.dispatchEvent(
       new CustomEvent("gesture-cursor", {
         detail: {
           x: currentCursorXRef.current,
           y: currentCursorYRef.current,
+          isPinching,
+          scrollDelta: frameScrollDelta,
           active: enabledRef.current,
         },
       })
@@ -751,17 +798,17 @@ const GestureControlOverlay = () => {
           data-gesture-ui
         >
           {starting
-            ? "Starting Camera..."
+            ? "Opening Immersive View..."
             : enabled
-              ? "Disable Camera Gestures"
-              : "Enable Camera Gestures"}
+              ? "Disable Camera Magic"
+              : "Explore The Magic With Your Camera"}
         </button>
 
         {enabled ? (
           <div className="gesture-overlay-status" data-gesture-ui>
             {handDetected
-              ? "Hand detected: move index finger to aim, pinch to click"
-              : "Show your hand to start controls"}
+              ? "Hand detected: point to explore, pinch to click and scroll."
+              : "Raise one hand to begin immersive controls."}
           </div>
         ) : null}
 

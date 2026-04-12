@@ -115,16 +115,26 @@ body.gesture-mode-active .cursor-main {
   left: 50%;
   top: max(12px, env(safe-area-inset-top));
   transform: translateX(-50%);
-  border: 1px solid rgba(255, 255, 255, 0.68);
-  background: rgba(9, 16, 28, 0.76);
-  color: #ffffff;
+  border: 1px solid var(--glassBorder);
+  background: linear-gradient(140deg, var(--glassBgStrong), var(--glassBg));
+  color: var(--textPrimary);
   border-radius: 999px;
-  padding: 10px 14px;
+  padding: 11px 16px;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: 0.02em;
   pointer-events: auto;
   cursor: pointer;
+  box-shadow: var(--glassShadow), inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  backdrop-filter: var(--glassBlur);
+  -webkit-backdrop-filter: var(--glassBlur);
+  transition: transform 0.2s ease, background-color 0.2s ease;
   z-index: 10020;
+}
+
+.gesture-overlay-toggle:hover {
+  transform: translateX(-50%) translateY(-1px);
+  background: linear-gradient(140deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.42));
 }
 
 .gesture-overlay-status,
@@ -134,18 +144,22 @@ body.gesture-mode-active .cursor-main {
   top: 62px;
   transform: translateX(-50%);
   max-width: 330px;
-  color: #f4f8ff;
+  color: var(--textPrimary);
   border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  background: rgba(8, 20, 35, 0.8);
+  border: 1px solid var(--glassBorder);
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.66), rgba(255, 255, 255, 0.38));
+  box-shadow: var(--glassShadow), inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  backdrop-filter: var(--glassBlur);
+  -webkit-backdrop-filter: var(--glassBlur);
   font-size: 12px;
   padding: 10px 12px;
 }
 
 .gesture-overlay-error {
   top: 108px;
-  color: #ffd7d7;
-  border-color: rgba(255, 173, 173, 0.55);
+  color: #a93a3a;
+  border-color: rgba(255, 177, 177, 0.8);
+  background: linear-gradient(160deg, rgba(255, 232, 232, 0.78), rgba(255, 217, 217, 0.5));
 }
 
 .gesture-overlay-debug {

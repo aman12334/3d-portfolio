@@ -104,12 +104,7 @@
   z-index: 6;
   padding-top: 6px;
   min-height: 120px;
-  background: linear-gradient(
-    180deg,
-    rgba(245, 248, 252, 0.9) 0%,
-    rgba(245, 248, 252, 0.96) 55%,
-    rgba(245, 248, 252, 1) 100%
-  );
+  background: transparent;
 }
 
 .portfolio-copy-kicker {
