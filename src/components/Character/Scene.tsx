@@ -52,10 +52,36 @@ const Scene = () => {
       const light = setLighting(scene);
       let progress = setProgress((value) => setLoading(value));
       const { loadCharacter } = setCharacter(renderer, scene, camera);
+      let loaderReleased = false;
+      const releaseLoader = () => {
+        if (loaderReleased) return;
+        loaderReleased = true;
+        progress
+          .loaded()
+          .then(() => {
+            setTimeout(() => {
+              light.turnOnLights();
+              animationsRef.current?.startIntro?.();
+            }, 2500);
+          })
+          .catch(() => {
+            progress.clear();
+          });
+      };
+      const animationsRef: {
+        current:
+          | ReturnType<typeof setAnimations>
+          | null;
+      } = { current: null };
+      // Hard fallback: never block the full app on character readiness.
+      const loaderFallbackTimer = window.setTimeout(() => {
+        releaseLoader();
+      }, 6000);
 
       loadCharacter().then((gltf) => {
         if (gltf) {
           const animations = setAnimations(gltf);
+          animationsRef.current = animations;
           hoverDivRef.current && animations.hover(gltf, hoverDivRef.current);
           mixer = animations.mixer;
           let character = gltf.scene;
@@ -63,12 +89,7 @@ const Scene = () => {
           scene.add(character);
           headBone = character.getObjectByName("spine006") || null;
           screenLight = character.getObjectByName("screenlight") || null;
-          progress.loaded().then(() => {
-            setTimeout(() => {
-              light.turnOnLights();
-              animations.startIntro();
-            }, 2500);
-          });
+          releaseLoader();
           window.addEventListener("resize", () =>
             handleResize(renderer, camera, canvasDiv, character)
           );
@@ -127,6 +148,7 @@ const Scene = () => {
       };
       animate();
       return () => {
+        window.clearTimeout(loaderFallbackTimer);
         clearTimeout(debounce);
         scene.clear();
         renderer.dispose();

@@ -4,8 +4,8 @@ import { setCharTimeline, setAllTimeline } from "../../utils/GsapScroll";
 import { decryptFile } from "./decrypt";
 
 const setCharacter = (
-  renderer: THREE.WebGLRenderer,
-  scene: THREE.Scene,
+  _renderer: THREE.WebGLRenderer,
+  _scene: THREE.Scene,
   camera: THREE.PerspectiveCamera
 ) => {
   const loader = new GLTFLoader();
@@ -27,7 +27,8 @@ const setCharacter = (
           blobUrl,
           async (gltf) => {
             character = gltf.scene;
-            await renderer.compileAsync(character, camera, scene);
+            // Avoid blocking first paint on full shader precompile.
+            // Let Three.js compile progressively during initial frames.
             character.traverse((child: any) => {
               if (child.isMesh) {
                 const mesh = child as THREE.Mesh;

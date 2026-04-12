@@ -1,0 +1,202 @@
+.gesture-overlay-root {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+body.gesture-mode-active {
+  cursor: none !important;
+}
+
+body.gesture-mode-active * {
+  cursor: none !important;
+}
+
+body.gesture-mode-active .cursor-main {
+  display: none !important;
+  opacity: 0 !important;
+}
+
+.gesture-overlay-ui-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10010;
+}
+
+.gesture-overlay-ui-layer [data-gesture-ui] {
+  pointer-events: auto;
+}
+
+:root.gesture-ar-mode body,
+:root.gesture-ar-mode #root,
+:root.gesture-ar-mode body.gesture-ar-mode,
+:root.gesture-ar-mode #root.gesture-ar-mode,
+:root.gesture-ar-mode .container-main,
+:root.gesture-ar-mode #smooth-wrapper,
+:root.gesture-ar-mode #smooth-content {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+:root.gesture-ar-mode .nav-fade,
+:root.gesture-ar-mode .character-model::before,
+:root.gesture-ar-mode .character-model::after,
+:root.gesture-ar-mode .work-project-embed,
+:root.gesture-ar-mode .work-project-panel,
+:root.gesture-ar-mode .work-stack-layout,
+:root.gesture-ar-mode .work-stack-stage,
+:root.gesture-ar-mode .contact-section,
+:root.gesture-ar-mode .work-section,
+:root.gesture-ar-mode .camera-music-panel,
+:root.gesture-ar-mode .landing-section,
+:root.gesture-ar-mode .landing-container,
+:root.gesture-ar-mode .landing-image,
+:root.gesture-ar-mode .landing-image img,
+:root.gesture-ar-mode .social-icons,
+:root.gesture-ar-mode .social-icons span {
+  background: transparent !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Avoid washed-out tiles/text when AR camera is active. */
+:root.gesture-ar-mode .work-stack-tile,
+:root.gesture-ar-mode .work-project-link,
+:root.gesture-ar-mode .work-project-icon,
+:root.gesture-ar-mode .camera-music-shell,
+:root.gesture-ar-mode .gesture-overlay-status,
+:root.gesture-ar-mode .gesture-overlay-error,
+:root.gesture-ar-mode .gesture-overlay-debug,
+:root.gesture-ar-mode .gesture-overlay-toggle {
+  opacity: 1 !important;
+}
+
+.gesture-overlay-camera {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  object-fit: cover;
+  opacity: 0;
+  transform: scaleX(-1);
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  z-index: -1;
+  filter: saturate(1.08) contrast(1.03);
+}
+
+.gesture-overlay-camera-active {
+  opacity: 1;
+}
+
+.gesture-overlay-cursor {
+  position: fixed;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  border: 2px solid rgba(255, 255, 255, 0.95);
+  box-shadow: 0 0 0 6px rgba(47, 111, 182, 0.25);
+  pointer-events: none;
+  transform: translate(-9999px, -9999px);
+  margin-left: -13px;
+  margin-top: -13px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.gesture-overlay-cursor.visible {
+  opacity: 1;
+}
+
+.gesture-overlay-toggle {
+  position: fixed;
+  left: 50%;
+  top: max(12px, env(safe-area-inset-top));
+  transform: translateX(-50%);
+  border: 1px solid rgba(255, 255, 255, 0.68);
+  background: rgba(9, 16, 28, 0.76);
+  color: #ffffff;
+  border-radius: 999px;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  pointer-events: auto;
+  cursor: pointer;
+  z-index: 10020;
+}
+
+.gesture-overlay-status,
+.gesture-overlay-error {
+  position: fixed;
+  left: 50%;
+  top: 62px;
+  transform: translateX(-50%);
+  max-width: 330px;
+  color: #f4f8ff;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(8, 20, 35, 0.8);
+  font-size: 12px;
+  padding: 10px 12px;
+}
+
+.gesture-overlay-error {
+  top: 108px;
+  color: #ffd7d7;
+  border-color: rgba(255, 173, 173, 0.55);
+}
+
+.gesture-overlay-debug {
+  position: fixed;
+  right: 16px;
+  top: 156px;
+  width: min(340px, 88vw);
+  color: #ddecff;
+  border-radius: 12px;
+  border: 1px solid rgba(166, 208, 255, 0.45);
+  background: rgba(6, 16, 31, 0.86);
+  font-size: 12px;
+  line-height: 1.35;
+  padding: 10px 12px;
+}
+
+.gesture-overlay-debug-actions {
+  margin-top: 8px;
+  display: flex;
+  gap: 8px;
+}
+
+.gesture-overlay-debug-actions button {
+  border: 1px solid rgba(210, 232, 255, 0.4);
+  background: rgba(22, 55, 95, 0.7);
+  color: #f2f8ff;
+  border-radius: 8px;
+  font-size: 12px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+@media (max-width: 768px) {
+  .gesture-overlay-toggle {
+    left: 50%;
+    top: 10px;
+    transform: translateX(-50%);
+    font-size: 12px;
+    padding: 9px 12px;
+  }
+
+  .gesture-overlay-status,
+  .gesture-overlay-error {
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: min(82vw, 320px);
+  }
+
+  .gesture-overlay-debug {
+    right: 10px;
+    top: 152px;
+    width: min(82vw, 320px);
+  }
+}
