@@ -73,6 +73,11 @@ body.gesture-mode-active .cursor-main {
   opacity: 1 !important;
 }
 
+:root.gesture-ar-mobile-mode .character-model {
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+
 .gesture-overlay-camera {
   position: fixed;
   inset: 0;
@@ -85,6 +90,10 @@ body.gesture-mode-active .cursor-main {
   pointer-events: none;
   z-index: -1;
   filter: saturate(1.08) contrast(1.03);
+}
+
+.gesture-overlay-camera-back {
+  transform: none;
 }
 
 .gesture-overlay-camera-active {

@@ -9,9 +9,7 @@ type GestureCursorDetail = {
 };
 
 const TRACKS = [
-  "/audio/lumivexasset-opera-night-330358.mp3",
   "/audio/michael-foster-music-moonlight-masqueradeorchestral-opera-411239.mp3",
-  "/audio/nickpanekaiassets-latin-baroque-morning-offering-prayer-opera-283031.mp3",
 ];
 
 const clamp = (value: number, min: number, max: number) =>

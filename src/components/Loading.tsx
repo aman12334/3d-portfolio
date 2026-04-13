@@ -26,9 +26,9 @@ const Loading = ({ percent }: { percent: number }) => {
       setLoaded(true);
       const doneTimer = window.setTimeout(() => {
         setIsLoaded(true);
-      }, 1200);
+      }, 180);
       return () => window.clearTimeout(doneTimer);
-    }, 500);
+    }, 90);
 
     return () => window.clearTimeout(loadedTimer);
   }, [percent, loaded]);
@@ -56,7 +56,7 @@ const Loading = ({ percent }: { percent: number }) => {
             module.initialFX();
           }
           setIsLoading(false);
-        }, 850);
+        }, 140);
       }
     });
   }, [isLoaded, setIsLoading]);
@@ -139,41 +139,45 @@ export default Loading;
 
 export const setProgress = (setLoading: (value: number) => void) => {
   let percent = 0;
+  let finished = false;
 
-  let interval = setInterval(() => {
-    if (percent <= 50) {
-      const rand = Math.round(Math.random() * 5);
-      percent += rand;
-      setLoading(percent);
-    } else {
-      clearInterval(interval);
-      interval = setInterval(() => {
-        percent += Math.round(Math.random());
-        setLoading(percent);
-        if (percent > 91) {
-          clearInterval(interval);
-        }
-      }, 2000);
-    }
-  }, 100);
+  const applyPercent = (next: number) => {
+    percent = Math.max(0, Math.min(100, Math.round(next)));
+    setLoading(percent);
+  };
+
+  const tick = () => {
+    if (finished) return;
+    if (percent < 40) applyPercent(percent + 4);
+    else if (percent < 70) applyPercent(percent + 2);
+    else if (percent < 90) applyPercent(percent + 1);
+    else if (percent < 95) applyPercent(percent + 1);
+  };
+
+  let interval = window.setInterval(tick, 90);
+
+  const stopTicker = () => {
+    window.clearInterval(interval);
+  };
 
   function clear() {
-    clearInterval(interval);
-    setLoading(100);
+    finished = true;
+    stopTicker();
+    applyPercent(100);
   }
 
   function loaded() {
     return new Promise<number>((resolve) => {
-      clearInterval(interval);
-      interval = setInterval(() => {
+      finished = true;
+      stopTicker();
+      interval = window.setInterval(() => {
         if (percent < 100) {
-          percent++;
-          setLoading(percent);
+          applyPercent(percent + 1);
         } else {
           resolve(percent);
-          clearInterval(interval);
+          stopTicker();
         }
-      }, 2);
+      }, 14);
     });
   }
 

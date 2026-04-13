@@ -1,69 +1,16 @@
-import { MdArrowOutward, MdCopyright } from "react-icons/md";
+import { MdCopyright } from "react-icons/md";
 import "./styles/Contact.css";
 import PretextReveal from "./ui/PretextReveal";
+import ProfessionalConnect from "./ui/get-in-touch";
 
 const Contact = () => {
   return (
     <div className="contact-section section-container" id="contact">
       <div className="contact-container">
-        <PretextReveal as="h3" text="Contact" />
+        <PretextReveal as="h3" className="section-title" text="Contact" />
         <div className="contact-flex">
-          <div className="contact-box">
-            <h4>Connect</h4>
-            <p>
-              <a
-                href="https://www.linkedin.com/in/amantiwarri"
-                target="_blank"
-                rel="noreferrer"
-                data-cursor="disable"
-              >
-                LinkedIn — amantiwarri
-              </a>
-            </p>
-            <p>
-              <a href="mailto:amant10@umd.edu" data-cursor="disable">
-                Email — amant10@umd.edu
-              </a>
-            </p>
-            <h4>Education</h4>
-            <p>
-              MBA, University of Maryland (Robert H. Smith School of Business)
-              — 2023-2025
-            </p>
-            <p>
-              B.Tech, Electronics &amp; Instrumentation Engineering, Dr. APJ
-              Abdul Kalam Azad Technical University — 2014-2018
-            </p>
-          </div>
-          <div className="contact-box">
-            <h4>Social</h4>
-            <a
-              href="https://github.com/aman12334"
-              target="_blank"
-              rel="noreferrer"
-              data-cursor="disable"
-              className="contact-social"
-            >
-              GitHub <MdArrowOutward />
-            </a>
-            <a
-              href="https://www.linkedin.com/in/amantiwarri"
-              target="_blank"
-              rel="noreferrer"
-              data-cursor="disable"
-              className="contact-social"
-            >
-              LinkedIn <MdArrowOutward />
-            </a>
-            <a
-              href="https://www.youtube.com/@amantiwarri"
-              target="_blank"
-              rel="noreferrer"
-              data-cursor="disable"
-              className="contact-social"
-            >
-              YouTube <MdArrowOutward />
-            </a>
+          <div className="contact-box contact-connect-box">
+            <ProfessionalConnect />
           </div>
           <div className="contact-box">
             <h2>

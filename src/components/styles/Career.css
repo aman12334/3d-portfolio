@@ -7,20 +7,8 @@
 }
 
 .career-section h2 {
-  font-size: 70px;
-  line-height: 70px;
-  font-weight: 400;
   text-align: center;
-  background: linear-gradient(0deg, #2f6fb6, #0f2f5f);
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  color: transparent;
   margin: 0 0 56px;
-  filter: drop-shadow(
-    0 0 calc(var(--mindpipe-intensity) * 14px)
-      rgba(47, 111, 182, calc(var(--mindpipe-intensity) * 0.55))
-  );
 }
 
 .career-section h2 > span {
@@ -31,19 +19,22 @@
 .career-expanding-wrapper {
   width: min(100%, 1180px);
   margin: 0 auto;
+  position: relative;
+  overflow: hidden;
 }
 
 @media only screen and (max-width: 1400px) {
   .career-section h2 {
     font-size: 52px;
-    line-height: 52px;
   }
 }
 
 @media only screen and (max-width: 1025px) {
   .career-section {
-    padding: 80px 0 60px;
-    margin-bottom: 60px;
+    padding: 56px 0 36px;
+    margin-bottom: 28px;
+    transform: none;
+    transition: none;
   }
 }
 
@@ -54,7 +45,11 @@
 
   .career-section h2 {
     font-size: 42px;
-    line-height: 44px;
     margin-bottom: 34px;
+  }
+
+  .career-expanding-wrapper {
+    width: 100%;
+    min-height: 520px;
   }
 }

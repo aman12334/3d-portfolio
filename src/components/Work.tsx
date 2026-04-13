@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "motion/react";
 import {
   Bot,
@@ -114,10 +114,15 @@ const projects: Project[] = [
 const Work = () => {
   const [activeIndex, setActiveIndex] = useState(0);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [isProjectOpen, setIsProjectOpen] = useState(true);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 900);
+  const [isYouTubePlaying, setIsYouTubePlaying] = useState(false);
   const stageRef = useRef<HTMLDivElement>(null);
+  const playerFrameRef = useRef<HTMLIFrameElement>(null);
   const centerIndex = Math.floor(projects.length / 2);
+  const closedIndex = isMobile ? 0 : centerIndex;
 
-  const focusIndex = hoveredIndex ?? activeIndex;
+  const focusIndex = hoveredIndex ?? (isProjectOpen ? activeIndex : closedIndex);
   const activeProject = projects[activeIndex];
 
   const handleStagePointerMove = (clientX: number) => {
@@ -134,17 +139,32 @@ const Work = () => {
 
   const tilePositions = useMemo(() => {
     return projects.map((_, i) => {
+      if (!isProjectOpen) {
+        const offset = i - closedIndex;
+        const dist = Math.abs(offset);
+        return {
+          x: offset * (isMobile ? 16 : 52),
+          y: dist * (isMobile ? 4 : 9),
+          z: -dist * (isMobile ? 35 : 70),
+          rotateY: offset * (isMobile ? -2.2 : -4),
+          rotateX: offset * 0.6,
+          scale: Math.max(isMobile ? 0.76 : 0.84, 1 - dist * (isMobile ? 0.07 : 0.05)),
+          opacity: Math.max(0.25, 1 - dist * 0.11),
+          zIndex: 180 - dist * 10,
+        };
+      }
+
       const hasPreview = hoveredIndex !== null;
       const offset = i - focusIndex;
       const isFocused = i === focusIndex;
       if (isFocused) {
         return {
           x: 0,
-          y: -24,
-          z: 320,
+          y: isMobile ? -8 : -24,
+          z: isMobile ? 180 : 320,
           rotateY: 0,
           rotateX: 0,
-          scale: 1.12,
+          scale: isMobile ? 1.03 : 1.12,
           opacity: 1,
           zIndex: 500,
         };
@@ -158,37 +178,111 @@ const Work = () => {
         : 0.76;
 
       return {
-        x: offset * 142,
-        y: offset * 26 + dist * 10 + 12,
-        z: (hasPreview ? -250 : -165) - dist * 62,
-        rotateY: offset * -8,
-        rotateX: offset * 1.8,
-        scale: hasPreview ? 0.83 : 0.88,
+        x: offset * (isMobile ? 36 : 142),
+        y: offset * (isMobile ? 8 : 26) + dist * (isMobile ? 6 : 10) + (isMobile ? 4 : 12),
+        z: (hasPreview ? -250 : -165) - dist * (isMobile ? 34 : 62),
+        rotateY: offset * (isMobile ? -4 : -8),
+        rotateX: offset * (isMobile ? 1 : 1.8),
+        scale: hasPreview ? (isMobile ? 0.9 : 0.83) : isMobile ? 0.94 : 0.88,
         opacity: Math.max(0.08, baseOpacity - dist * 0.04),
         zIndex: 180 - dist * 12,
       };
     });
-  }, [focusIndex, hoveredIndex]);
+  }, [closedIndex, focusIndex, hoveredIndex, isMobile, isProjectOpen]);
+
+  useEffect(() => {
+    const onResize = () => {
+      setIsMobile(window.innerWidth <= 900);
+    };
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  useEffect(() => {
+    const handleGestureProjectSelect = (event: Event) => {
+      const detail = (event as CustomEvent<{ index?: number }>).detail;
+      if (typeof detail?.index !== "number") return;
+      const nextIndex = Math.max(0, Math.min(projects.length - 1, detail.index));
+      setHoveredIndex(nextIndex);
+      setActiveIndex(nextIndex);
+      setIsProjectOpen(true);
+    };
+
+    window.addEventListener("gesture-select-project", handleGestureProjectSelect as EventListener);
+    return () => {
+      window.removeEventListener(
+        "gesture-select-project",
+        handleGestureProjectSelect as EventListener
+      );
+    };
+  }, []);
+
+  useEffect(() => {
+    setIsYouTubePlaying(false);
+  }, [activeProject.title]);
+
+  const handleYouTubePlaybackToggle = () => {
+    const iframe = playerFrameRef.current;
+    if (!iframe?.contentWindow) return;
+
+    iframe.contentWindow.postMessage(
+      JSON.stringify({
+        event: "command",
+        func: isYouTubePlaying ? "pauseVideo" : "playVideo",
+        args: [],
+      }),
+      "*"
+    );
+    setIsYouTubePlaying((prev) => !prev);
+  };
+
+  const handleProjectTileClick = (index: number) => {
+    if (isProjectOpen && activeIndex === index) {
+      setIsProjectOpen(false);
+      setHoveredIndex(null);
+      setActiveIndex(closedIndex);
+      return;
+    }
+    setActiveIndex(index);
+    setHoveredIndex(index);
+    setIsProjectOpen(true);
+  };
+
+  const handleProjectNavigate = (direction: -1 | 1) => {
+    const baseIndex = hoveredIndex ?? activeIndex;
+    const nextIndex = (baseIndex + direction + projects.length) % projects.length;
+    setActiveIndex(nextIndex);
+    setHoveredIndex(nextIndex);
+  };
 
   return (
     <section
-      className="work-section"
-      id="work"
+      className="work-section max-[767px]:px-2"
+      id="projects"
       onMouseLeave={() => {
         setHoveredIndex(null);
-        setActiveIndex(centerIndex);
+        if (!isProjectOpen) {
+          setActiveIndex(closedIndex);
+        }
       }}
     >
-      <div className="work-container section-container">
-        <h2>
-          My <span>Work</span>
+      <div id="work" className="work-anchor" aria-hidden="true" />
+      <div id="projects-start" className="work-anchor" aria-hidden="true" />
+      <div className="work-container section-container max-[767px]:!w-full max-[767px]:!max-w-none">
+        <h2 className="section-title max-[767px]:!mb-6 max-[767px]:!text-[2rem] max-[767px]:!leading-[1.03]">
+          My <span className="accent">Work</span>
         </h2>
 
-        <div className="work-stack-layout">
+        <div className="work-stack-layout max-[767px]:!grid-cols-1 max-[767px]:!gap-4">
           <div
             ref={stageRef}
             className="work-stack-stage"
-            onMouseLeave={() => setHoveredIndex(null)}
+            onMouseLeave={() => {
+              setHoveredIndex(null);
+              if (!isProjectOpen) {
+                setActiveIndex(closedIndex);
+              }
+            }}
             onTouchMove={(e) => {
               const touch = e.touches[0];
               if (touch) handleStagePointerMove(touch.clientX);
@@ -201,22 +295,24 @@ const Work = () => {
                   gridTemplateColumns: `repeat(${projects.length}, minmax(0, 1fr))`,
                 }}
               >
-              {projects.map((project, i) => (
-                <button
-                  key={`${project.title}-zone`}
-                  type="button"
-                  className="work-stack-hit-zone"
-                  onMouseEnter={() => {
-                    setHoveredIndex(i);
-                    setActiveIndex(i);
-                  }}
-                  onFocus={() => {
-                    setHoveredIndex(i);
-                    setActiveIndex(i);
-                  }}
-                  aria-label={`Preview ${project.title}`}
-                />
-              ))}
+                {projects.map((project, i) => (
+                  <button
+                    key={`${project.title}-zone`}
+                    type="button"
+                    className="work-stack-hit-zone"
+                    data-project-index={i}
+                    onClick={() => handleProjectTileClick(i)}
+                    onMouseEnter={() => {
+                      setHoveredIndex(i);
+                      setActiveIndex(i);
+                    }}
+                    onFocus={() => {
+                      setHoveredIndex(i);
+                      setActiveIndex(i);
+                    }}
+                    aria-label={`Preview ${project.title}`}
+                  />
+                ))}
               </div>
             </div>
             <div className="work-stack-scene">
@@ -225,6 +321,7 @@ const Work = () => {
                   key={project.title}
                   type="button"
                   className={`work-stack-tile ${i === activeIndex ? "work-stack-tile-active" : ""}`}
+                  data-project-index={i}
                   onMouseEnter={() => {
                     setHoveredIndex(i);
                     setActiveIndex(i);
@@ -234,10 +331,7 @@ const Work = () => {
                     setActiveIndex(i);
                   }}
                   onBlur={() => setHoveredIndex(null)}
-                  onClick={() => {
-                    setActiveIndex(i);
-                    setHoveredIndex(i);
-                  }}
+                  onClick={() => handleProjectTileClick(i)}
                   animate={{
                     x: tilePositions[i].x,
                     y: tilePositions[i].y,
@@ -270,34 +364,54 @@ const Work = () => {
                 </motion.button>
               ))}
             </div>
-            <div className="work-stack-steps" aria-label="Project selector">
-              {projects.map((project, i) => (
+            {isMobile ? (
+              <>
                 <button
-                  key={`${project.title}-step`}
                   type="button"
-                  className={`work-stack-step ${i === activeIndex ? "work-stack-step-active" : ""}`}
-                  onMouseEnter={() => {
-                    setHoveredIndex(i);
-                    setActiveIndex(i);
-                  }}
-                  onFocus={() => {
-                    setHoveredIndex(i);
-                    setActiveIndex(i);
-                  }}
-                  onClick={() => {
-                    setHoveredIndex(i);
-                    setActiveIndex(i);
-                  }}
-                  aria-label={`Select ${project.title}`}
-                  aria-pressed={i === activeIndex}
-                />
-              ))}
-            </div>
+                  className="work-stack-nav-btn work-stack-nav-btn-left"
+                  onClick={() => handleProjectNavigate(-1)}
+                  aria-label="Previous project"
+                >
+                  {"<"}
+                </button>
+                <button
+                  type="button"
+                  className="work-stack-nav-btn work-stack-nav-btn-right"
+                  onClick={() => handleProjectNavigate(1)}
+                  aria-label="Next project"
+                >
+                  {">"}
+                </button>
+              </>
+            ) : (
+              <div className="work-stack-steps" aria-label="Project selector">
+                {projects.map((project, i) => (
+                  <button
+                    key={`${project.title}-step`}
+                    type="button"
+                    className={`work-stack-step ${i === activeIndex ? "work-stack-step-active" : ""}`}
+                    data-project-index={i}
+                    onMouseEnter={() => {
+                      setHoveredIndex(i);
+                      setActiveIndex(i);
+                    }}
+                    onFocus={() => {
+                      setHoveredIndex(i);
+                      setActiveIndex(i);
+                    }}
+                    onClick={() => handleProjectTileClick(i)}
+                    aria-label={`Select ${project.title}`}
+                    aria-pressed={i === activeIndex}
+                  />
+                ))}
+              </div>
+            )}
           </div>
 
+          {isProjectOpen ? (
           <motion.article
             key={activeProject.title}
-            className="work-project-panel"
+            className="work-project-panel max-[767px]:rounded-2xl max-[767px]:border max-[767px]:border-[#bfd0e6] max-[767px]:bg-white/80 max-[767px]:p-4 max-[767px]:shadow-[0_10px_28px_rgba(15,47,95,0.12)]"
             initial={{ opacity: 0, x: 26 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.28, ease: "easeOut" }}
@@ -305,14 +419,20 @@ const Work = () => {
             <div className="work-project-head">
               <span className="work-project-icon">{activeProject.icon}</span>
               <div>
-                <p className="work-project-category">{activeProject.category}</p>
-                <h3>{activeProject.title}</h3>
+                <p className="work-project-category max-[767px]:!text-[10px] max-[767px]:!tracking-[0.08em]">
+                  {activeProject.category}
+                </p>
+                <h3 className="max-[767px]:!text-[1.35rem] max-[767px]:!leading-[1.18]">
+                  {activeProject.title}
+                </h3>
               </div>
             </div>
 
-            <p className="work-project-tools">{activeProject.tools}</p>
+            <p className="work-project-tools max-[767px]:!mt-2 max-[767px]:!text-[0.92rem] max-[767px]:!leading-[1.5]">
+              {activeProject.tools}
+            </p>
 
-            <div className="work-project-media">
+            <div className="work-project-media max-[767px]:!mt-3">
               {activeProject.mediaType === "iframe" && activeProject.embedUrl ? (
                 <iframe
                   src={activeProject.embedUrl}
@@ -321,7 +441,7 @@ const Work = () => {
                     activeProject.title === "Github Metropolis"
                       ? "work-project-embed-metropolis"
                       : ""
-                  }`}
+                  } max-[767px]:!h-[56vw] max-[767px]:!min-h-[210px] max-[767px]:!max-h-[285px]`}
                   loading="lazy"
                   allow="fullscreen; autoplay"
                   referrerPolicy="strict-origin-when-cross-origin"
@@ -330,9 +450,12 @@ const Work = () => {
 
               {activeProject.mediaType === "youtube" && activeProject.embedUrl ? (
                 <iframe
-                  src={activeProject.embedUrl}
+                  ref={playerFrameRef}
+                  src={`${activeProject.embedUrl}${
+                    activeProject.embedUrl.includes("?") ? "&" : "?"
+                  }enablejsapi=1&playsinline=1&rel=0`}
                   title={activeProject.title}
-                  className="work-project-embed"
+                  className="work-project-embed max-[767px]:!h-[56vw] max-[767px]:!min-h-[210px] max-[767px]:!max-h-[285px]"
                   loading="lazy"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                   allowFullScreen
@@ -344,22 +467,33 @@ const Work = () => {
                 <img
                   src={activeProject.image}
                   alt={activeProject.title}
-                  className="work-project-image"
+                  className="work-project-image max-[767px]:!max-h-[285px] max-[767px]:!rounded-xl"
                   loading="lazy"
                 />
               ) : null}
             </div>
 
-            <div className="work-project-links">
+            <div className="work-project-links max-[767px]:!mt-3 max-[767px]:!gap-2">
               <a
                 href={activeProject.link}
                 target="_blank"
                 rel="noreferrer"
-                className="work-project-link"
+                className="work-project-link max-[767px]:!px-3 max-[767px]:!py-2 max-[767px]:!text-[12px]"
                 data-cursor="disable"
               >
                 Open Source / Demo
               </a>
+
+              {activeProject.mediaType === "youtube" ? (
+                <button
+                  type="button"
+                  className="work-project-link max-[767px]:!px-3 max-[767px]:!py-2 max-[767px]:!text-[12px]"
+                  data-cursor="disable"
+                  onClick={handleYouTubePlaybackToggle}
+                >
+                  {isYouTubePlaying ? "Pause Demo" : "Play Demo"}
+                </button>
+              ) : null}
 
               {activeProject.title === "Github Metropolis" &&
               activeProject.embedUrl ? (
@@ -367,7 +501,7 @@ const Work = () => {
                   href={activeProject.embedUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="work-project-link"
+                  className="work-project-link max-[767px]:!px-3 max-[767px]:!py-2 max-[767px]:!text-[12px]"
                   data-cursor="disable"
                 >
                   Open in New Tab (Play)
@@ -375,6 +509,7 @@ const Work = () => {
               ) : null}
             </div>
           </motion.article>
+          ) : null}
         </div>
       </div>
     </section>

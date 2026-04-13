@@ -9,6 +9,22 @@
   -webkit-transform: translateZ(0);
   transform: translateZ(0);
 }
+
+.section-title {
+  margin: 0 0 42px;
+  font-size: clamp(40px, 4.2vw, 70px);
+  line-height: 0.98;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--textPrimary);
+  text-shadow: 0 0 calc(var(--mindpipe-intensity) * 14px)
+    rgba(47, 111, 182, calc(var(--mindpipe-intensity) * 0.55));
+}
+
+.section-title .accent {
+  color: var(--accentColor);
+}
 @media only screen and (max-width: 1600px) {
   .section-container {
     width: 1200px;
@@ -24,5 +40,19 @@
   .section-container {
     width: 500px;
     max-width: var(--cWidth);
+  }
+
+  .section-title {
+    margin-bottom: 30px;
+    font-size: clamp(32px, 9vw, 52px);
+    line-height: 1.02;
+    text-align: center;
+  }
+
+  #about,
+  #career,
+  #projects-start,
+  #contact {
+    scroll-margin-top: 92px;
   }
 }

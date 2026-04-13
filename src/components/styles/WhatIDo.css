@@ -23,11 +23,8 @@
 
 .what-shell h2 {
   margin: 0;
-  font-size: clamp(52px, 3.6vw + 14px, 96px);
-  line-height: 0.9;
-  font-weight: 600;
-  color: var(--textPrimary);
-  letter-spacing: 0.01em;
+  line-height: 0.94;
+  letter-spacing: 0.02em;
 }
 
 .hat-h2 {
@@ -52,7 +49,7 @@
 @media only screen and (max-width: 1024px) {
   .whatIDO {
     min-height: auto;
-    padding: 50px 0;
+    padding: 34px 0 26px;
   }
 
   .what-shell {
@@ -64,6 +61,6 @@
 
   .what-shell h2 {
     text-align: center;
-    font-size: clamp(46px, 9vw, 84px);
+    font-size: clamp(36px, 9vw, 64px);
   }
 }

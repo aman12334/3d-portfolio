@@ -1,4 +1,6 @@
 @import url("https://fonts.googleapis.com/css2?family=Geist:wght@100..900&display=swap");
+@tailwind components;
+@tailwind utilities;
 
 :root {
   font-family: "Geist", sans-serif;
@@ -142,6 +144,11 @@ body {
     rgba(47, 111, 182, calc(var(--mindpipe-intensity) * 0.55));
 }
 
+.tech-canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
 @media screen and (min-width: 768px) {
   body {
     --cWidth: 94%;
@@ -149,7 +156,28 @@ body {
 }
 
 @media screen and (max-width: 900px) {
+  .techstack {
+    height: auto;
+    min-height: 640px;
+    padding-top: 92px;
+    box-sizing: border-box;
+    margin-top: 20px;
+    margin-bottom: -140px;
+  }
+
   .techstack h2 {
     font-size: 40px;
+    top: 16px;
+  }
+
+  .tech-canvas {
+    height: calc(100% - 72px) !important;
+  }
+}
+
+@media screen and (max-width: 1024px) {
+  body {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 }

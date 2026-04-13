@@ -29,6 +29,7 @@
   filter: blur(60px);
   border-radius: 50%;
   animation: loadingCircle 5s linear infinite;
+  pointer-events: none;
 }
 
 .nav-fade {
@@ -69,6 +70,7 @@
   filter: blur(50px);
   border-radius: 50%;
   animation: loadingCircle2 5s linear infinite;
+  pointer-events: none;
 }
 
 @keyframes loadingCircle2 {
@@ -119,7 +121,7 @@
   left: 50%;
   z-index: 0;
   bottom: 50px;
-  pointer-events: none;
+  pointer-events: none !important;
 }
 
 .character-model::after {
@@ -156,7 +158,7 @@
 
 .character-model canvas {
   position: relative;
-  pointer-events: none;
+  pointer-events: none !important;
   z-index: 2;
 }
 
@@ -169,6 +171,7 @@
   z-index: 3;
   transform: translate(-50%, -50%);
   border-radius: 50%;
+  pointer-events: none;
 }
 
 .landing-intro {

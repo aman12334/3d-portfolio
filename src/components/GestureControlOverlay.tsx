@@ -3,7 +3,9 @@ import { smoother as navbarSmoother } from "./Navbar";
 import { ScrollSmoother } from "gsap/ScrollSmoother";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { startMindARCamera, stopMindARCamera } from "./utils/mindarBridge";
+import MobileARScene from "./MobileARScene";
 import "./styles/GestureControlOverlay.css";
+import "./styles/MobileARScene.css";
 
 type WorkerReadyMessage = { type: "ready" };
 type WorkerErrorMessage = { type: "error"; message: string };
@@ -12,6 +14,7 @@ type WorkerHandDataMessage = {
   x: number;
   y: number;
   isPinching: boolean;
+  isFist: boolean;
 };
 type WorkerNoHandMessage = { type: "NO_HAND" };
 type WorkerMessage =
@@ -22,14 +25,20 @@ type WorkerMessage =
 
 const TARGET_PRIORITY: Array<{ match: string; closest?: string }> = [
   // Top navigation targets (About / Work / Projects / Contact)
+  { match: "[data-gesture-nav], [data-gesture-nav] *", closest: "[data-gesture-nav]" },
   { match: ".header ul a, .header ul a *", closest: ".header ul a" },
   { match: "[data-href], [data-href] *", closest: "[data-href]" },
 
   // Work section controls and tiles
+  { match: "[data-project-index], [data-project-index] *", closest: "[data-project-index]" },
   { match: ".work-stack-hit-zone, .work-stack-hit-zone *", closest: ".work-stack-hit-zone" },
   { match: ".work-stack-step, .work-stack-step *", closest: ".work-stack-step" },
   { match: ".work-stack-tile, .work-stack-tile *", closest: ".work-stack-tile" },
   { match: ".work-project-link, .work-project-link *", closest: ".work-project-link" },
+
+  // Career / experience cards
+  { match: "[data-career-index], [data-career-index] *", closest: "[data-career-index]" },
+  { match: ".expanding-card, .expanding-card *", closest: ".expanding-card" },
 
   // Embedded project media (YouTube / iframe / video)
   { match: ".work-project-embed, .work-project-embed *", closest: ".work-project-embed" },
@@ -46,13 +55,17 @@ const TARGET_PRIORITY: Array<{ match: string; closest?: string }> = [
 ];
 
 const INTERACTION_FALLBACK_SELECTOR = [
+  "[data-gesture-nav]",
   ".header ul a",
   "[data-href]",
+  "[data-project-index]",
   ".work-stack-hit-zone",
   ".work-stack-step",
   ".work-stack-tile",
   ".work-project-link",
   ".work-project-embed",
+  "[data-career-index]",
+  ".expanding-card",
   "iframe",
   "video",
   ".professional-card",
@@ -63,6 +76,23 @@ const INTERACTION_FALLBACK_SELECTOR = [
 
 const clamp = (value: number, min: number, max: number) =>
   Math.max(min, Math.min(value, max));
+
+const isMobileTouchViewport = () => {
+  if (typeof window === "undefined") return false;
+
+  const coarsePointer = window.matchMedia?.("(any-pointer: coarse)").matches ?? false;
+  const finePointer = window.matchMedia?.("(any-pointer: fine)").matches ?? false;
+
+  // Prefer actual input capability over viewport width so smaller desktop windows
+  // still get the hand cursor, pinch click, and other desktop interactions.
+  if (finePointer) return false;
+  if (coarsePointer) return true;
+
+  return window.innerWidth <= 768;
+};
+
+const canUseGetUserMedia = () =>
+  typeof navigator !== "undefined" && typeof navigator.mediaDevices?.getUserMedia === "function";
 
 const GestureControlOverlay = () => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -82,19 +112,27 @@ const GestureControlOverlay = () => {
   const targetCursorYRef = useRef(window.innerHeight * 0.5);
 
   const isPinchingRef = useRef(false);
+  const isFistRef = useRef(false);
   const prevPinchingRef = useRef(false);
+  const prevFistRef = useRef(false);
   const prevPinchYRef = useRef(0);
   const pinchStartYRef = useRef(0);
   const initialScrollYRef = useRef(0);
   const lastClickAtRef = useRef(0);
+  const suppressPinchScrollUntilRef = useRef(0);
   const lastDetectPostAtRef = useRef(0);
   const previousHoverElRef = useRef<HTMLElement | null>(null);
+  const lockedTargetRef = useRef<HTMLElement | null>(null);
+  const lockUntilRef = useRef(0);
+  const fistTriggeredRef = useRef(false);
   const handDetectedRef = useRef(false);
+  const feedMirroredRef = useRef(true);
 
   const [enabled, setEnabled] = useState(false);
   const [starting, setStarting] = useState(false);
   const [handDetected, setHandDetected] = useState(false);
   const [error, setError] = useState("");
+  const [mobileArMode, setMobileArMode] = useState(isMobileTouchViewport());
 
   const dispatchHover = (el: HTMLElement | null, x: number, y: number) => {
     const previousEl = previousHoverElRef.current;
@@ -153,8 +191,13 @@ const GestureControlOverlay = () => {
     }
 
     previousHoverElRef.current = null;
+    lockedTargetRef.current = null;
+    lockUntilRef.current = 0;
+    fistTriggeredRef.current = false;
     isPinchingRef.current = false;
+    isFistRef.current = false;
     prevPinchingRef.current = false;
+    prevFistRef.current = false;
     prevPinchYRef.current = 0;
     pinchStartYRef.current = 0;
     initialScrollYRef.current = 0;
@@ -274,6 +317,26 @@ const GestureControlOverlay = () => {
     return resolveFromHitElements(hitElements);
   };
 
+  const resolveInteractionTargetWithFallback = (cursorX: number, cursorY: number) => {
+    const directTarget = resolveInteractionTarget(cursorX, cursorY);
+    if (directTarget) return directTarget;
+
+    const hoverTarget = previousHoverElRef.current;
+    if (hoverTarget && !hoverTarget.closest("[data-gesture-ui]")) {
+      const styles = window.getComputedStyle(hoverTarget);
+      if (
+        styles.pointerEvents !== "none" &&
+        styles.visibility !== "hidden" &&
+        styles.display !== "none" &&
+        styles.opacity !== "0"
+      ) {
+        return hoverTarget;
+      }
+    }
+
+    return findFallbackTarget(cursorX, cursorY);
+  };
+
   const resolveActionableTarget = (targetElement: HTMLElement) => {
     const actionable = targetElement.closest(
       "a, button, [data-href], [data-scroll-target], [role='button'], [tabindex], iframe, video"
@@ -281,6 +344,14 @@ const GestureControlOverlay = () => {
     if (actionable instanceof HTMLElement && !actionable.closest("[data-gesture-ui]")) {
       return actionable;
     }
+
+    const nestedActionable = targetElement.querySelector(
+      "a, button, [data-href], [data-scroll-target], [role='button'], [tabindex], iframe, video"
+    );
+    if (nestedActionable instanceof HTMLElement && !nestedActionable.closest("[data-gesture-ui]")) {
+      return nestedActionable;
+    }
+
     return targetElement;
   };
 
@@ -338,10 +409,10 @@ const GestureControlOverlay = () => {
     const clickX = Math.round(clamp(x, 0, window.innerWidth - 1));
     const clickY = Math.round(clamp(y, 0, window.innerHeight - 1));
     const hitElements = getRaycastStack(clickX, clickY);
-    let resolvedTarget = resolveFromHitElements(hitElements);
-    if (!resolvedTarget) {
-      resolvedTarget = findFallbackTarget(clickX, clickY);
-    }
+    const resolvedTarget =
+      resolveFromHitElements(hitElements) ||
+      previousHoverElRef.current ||
+      findFallbackTarget(clickX, clickY);
 
     if (!resolvedTarget) {
       console.log("FAILED: No clickable target found in stack:", hitElements);
@@ -360,13 +431,75 @@ const GestureControlOverlay = () => {
     }
 
     const dataHref = actionableTarget.getAttribute("data-href");
+    const gestureNavTarget = actionableTarget.getAttribute("data-gesture-nav");
     const dataScrollTarget = actionableTarget.getAttribute("data-scroll-target");
     const href = actionableTarget.getAttribute("href");
+    const projectIndexAttr = actionableTarget.getAttribute("data-project-index");
+    const careerIndexAttr = actionableTarget.getAttribute("data-career-index");
+
+    if (careerIndexAttr !== null) {
+      const careerIndex = Number(careerIndexAttr);
+      if (Number.isFinite(careerIndex)) {
+        window.dispatchEvent(
+          new CustomEvent("gesture-select-career", {
+            detail: { index: careerIndex },
+          })
+        );
+        lastClickAtRef.current = now;
+        window.dispatchEvent(
+          new CustomEvent("gesture-click", {
+            detail: { x: clickX, y: clickY, target: `career-${careerIndex}` },
+          })
+        );
+        return true;
+      }
+    }
+
+    if (projectIndexAttr !== null) {
+      const projectIndex = Number(projectIndexAttr);
+      if (Number.isFinite(projectIndex)) {
+        window.dispatchEvent(
+          new CustomEvent("gesture-select-project", {
+            detail: { index: projectIndex },
+          })
+        );
+        lastClickAtRef.current = now;
+        window.dispatchEvent(
+          new CustomEvent("gesture-click", {
+            detail: { x: clickX, y: clickY, target: `project-${projectIndex}` },
+          })
+        );
+        return true;
+      }
+    }
 
     const targetSection =
-      dataHref || dataScrollTarget || (href && href.startsWith("#") ? href : null);
+      gestureNavTarget ||
+      dataHref ||
+      dataScrollTarget ||
+      (href && href.startsWith("#") ? href : null);
 
     if (targetSection) {
+      suppressPinchScrollUntilRef.current = now + 450;
+      prevPinchYRef.current = currentCursorYRef.current;
+      pinchStartYRef.current = currentCursorYRef.current;
+
+      window.dispatchEvent(
+        new CustomEvent("gesture-nav-select", {
+          detail: { target: targetSection },
+        })
+      );
+
+      if (
+        typeof actionableTarget.click === "function" &&
+        actionableTarget.tagName.toLowerCase() !== "iframe" &&
+        actionableTarget.tagName.toLowerCase() !== "video"
+      ) {
+        actionableTarget.click();
+      } else {
+        dispatchNativeClick(actionableTarget, clickX, clickY);
+      }
+
       if (targetSection.startsWith("#")) {
         const section = document.querySelector(targetSection);
         if (!section) {
@@ -411,6 +544,28 @@ const GestureControlOverlay = () => {
       return true;
     }
 
+    if (
+      typeof actionableTarget.click === "function" &&
+      actionableTarget.tagName.toLowerCase() !== "iframe" &&
+      actionableTarget.tagName.toLowerCase() !== "video"
+    ) {
+      actionableTarget.click();
+      lastClickAtRef.current = now;
+      window.dispatchEvent(
+        new CustomEvent("gesture-click", {
+          detail: {
+            x: clickX,
+            y: clickY,
+            target:
+              actionableTarget.getAttribute("href") ||
+              actionableTarget.getAttribute("data-href") ||
+              actionableTarget.tagName.toLowerCase(),
+          },
+        })
+      );
+      return true;
+    }
+
     dispatchNativeClick(actionableTarget, clickX, clickY);
     if (actionableTarget.tagName.toLowerCase() === "iframe") {
       actionableTarget.focus();
@@ -431,10 +586,19 @@ const GestureControlOverlay = () => {
     return true;
   };
 
+  const triggerLockedInteractionTarget = (target: HTMLElement, now: number) => {
+    const rect = target.getBoundingClientRect();
+    const x = rect.left + rect.width / 2;
+    const y = rect.top + rect.height / 2;
+    return triggerInteractionTarget(x, y, now);
+  };
+
   const handleHandData = (msg: WorkerHandDataMessage) => {
-    targetCursorXRef.current = clamp((1 - msg.x) * window.innerWidth, 0, window.innerWidth - 1);
+    const mappedX = feedMirroredRef.current ? 1 - msg.x : msg.x;
+    targetCursorXRef.current = clamp(mappedX * window.innerWidth, 0, window.innerWidth - 1);
     targetCursorYRef.current = clamp(msg.y * window.innerHeight, 0, window.innerHeight - 1);
     isPinchingRef.current = msg.isPinching;
+    isFistRef.current = msg.isFist;
 
     if (!handDetectedRef.current) {
       handDetectedRef.current = true;
@@ -448,8 +612,13 @@ const GestureControlOverlay = () => {
       setHandDetected(false);
     }
     isPinchingRef.current = false;
+    isFistRef.current = false;
     prevPinchingRef.current = false;
+    prevFistRef.current = false;
     prevPinchYRef.current = 0;
+    lockedTargetRef.current = null;
+    lockUntilRef.current = 0;
+    fistTriggeredRef.current = false;
     dispatchHover(null, currentCursorXRef.current, currentCursorYRef.current);
   };
 
@@ -497,11 +666,31 @@ const GestureControlOverlay = () => {
 
     const cursor = cursorRef.current;
     const isPinching = isPinchingRef.current;
+    const isFist = isFistRef.current;
+    const now = Date.now();
+    const isLockActive = now < lockUntilRef.current;
     let frameScrollDelta = 0;
     if (cursor) {
-      cursor.style.transform = `translate(${currentCursorXRef.current}px, ${currentCursorYRef.current}px) scale(${isPinching ? 0.5 : 1})`;
+      cursor.style.transform = `translate(${currentCursorXRef.current}px, ${currentCursorYRef.current}px) scale(${isFist ? 0.5 : isPinching ? 0.72 : 1})`;
       cursor.style.opacity = handDetectedRef.current ? "1" : "0.45";
-      cursor.style.background = isPinching ? "#ff3b3b" : "white";
+      cursor.style.background = isFist ? "#ff3b3b" : isPinching ? "#8ac5ff" : "white";
+    }
+
+    if (isFist && !prevFistRef.current) {
+      const x = Math.round(clamp(currentCursorXRef.current, 0, window.innerWidth - 1));
+      const y = Math.round(clamp(currentCursorYRef.current, 0, window.innerHeight - 1));
+      lockedTargetRef.current = resolveInteractionTargetWithFallback(x, y);
+      lockUntilRef.current = now + 160;
+      fistTriggeredRef.current = false;
+    }
+
+    if (isFist && !fistTriggeredRef.current && isLockActive) {
+      if (lockedTargetRef.current && now - lastClickAtRef.current > 250) {
+        const didTrigger = triggerLockedInteractionTarget(lockedTargetRef.current, now);
+        if (didTrigger) {
+          fistTriggeredRef.current = true;
+        }
+      }
     }
 
     if (isPinching && !prevPinchingRef.current) {
@@ -509,16 +698,10 @@ const GestureControlOverlay = () => {
       pinchStartYRef.current = currentCursorYRef.current;
       const smoother = ScrollSmoother.get() || navbarSmoother;
       initialScrollYRef.current = smoother ? smoother.scrollTop() : window.scrollY;
-      const now = Date.now();
-      if (now - lastClickAtRef.current > 250) {
-        const x = Math.round(clamp(currentCursorXRef.current, 0, window.innerWidth - 1));
-        const y = Math.round(clamp(currentCursorYRef.current, 0, window.innerHeight - 1));
-        const target = resolveInteractionTarget(x, y);
-        if (target) {
-          triggerInteractionTarget(x, y, now);
-        }
-      }
     } else if (isPinching) {
+      if (Date.now() < suppressPinchScrollUntilRef.current) {
+        prevPinchYRef.current = currentCursorYRef.current;
+      } else {
       const frameDrag = currentCursorYRef.current - prevPinchYRef.current;
       prevPinchYRef.current = currentCursorYRef.current;
       frameScrollDelta = -frameDrag * 2.5;
@@ -531,16 +714,23 @@ const GestureControlOverlay = () => {
       } else {
         window.scrollTo({ top: scrollTarget, behavior: "instant" as ScrollBehavior });
       }
+      }
     }
 
-    if (handDetectedRef.current && !isPinching) {
+    if (handDetectedRef.current && !isPinching && !isFist && !isLockActive) {
       const hoverEl = resolveInteractionTarget(currentCursorXRef.current, currentCursorYRef.current);
       dispatchHover(hoverEl, currentCursorXRef.current, currentCursorYRef.current);
     } else {
-      dispatchHover(null, currentCursorXRef.current, currentCursorYRef.current);
+      dispatchHover(lockedTargetRef.current, currentCursorXRef.current, currentCursorYRef.current);
     }
 
     prevPinchingRef.current = isPinching;
+    prevFistRef.current = isFist;
+    if (!isFist) {
+      lockedTargetRef.current = null;
+      lockUntilRef.current = 0;
+      fistTriggeredRef.current = false;
+    }
     if (!isPinching) {
       prevPinchYRef.current = currentCursorYRef.current;
     }
@@ -551,6 +741,7 @@ const GestureControlOverlay = () => {
           x: currentCursorXRef.current,
           y: currentCursorYRef.current,
           isPinching,
+          isFist,
           scrollDelta: frameScrollDelta,
           active: enabledRef.current,
         },
@@ -605,12 +796,11 @@ const GestureControlOverlay = () => {
     worker.postMessage({
       type: "init",
       wasmRoots: ["https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.34/wasm"],
-      modelUrls: [
-        "/mediapipe/hand_landmarker.task",
-        "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task",
-      ],
+      modelUrls: ["/mediapipe/hand_landmarker.task"],
       runningMode: "VIDEO",
       numHands: 1,
+      minHandDetectionConfidence: 0.35,
+      minTrackingConfidence: 0.35,
     });
 
     workerRef.current = worker;
@@ -620,26 +810,49 @@ const GestureControlOverlay = () => {
     if (starting || enabled) return;
     setError("");
     setStarting(true);
+    const nextMobileArMode = isMobileTouchViewport();
+    setMobileArMode(nextMobileArMode);
 
     try {
       let stream: MediaStream;
-      try {
-        stream = await startMindARCamera();
-      } catch {
+      if (!canUseGetUserMedia()) {
+        throw new Error(
+          "Camera access is unavailable here. On phones, open this site over HTTPS and allow camera permissions."
+        );
+      }
+      if (nextMobileArMode) {
+        feedMirroredRef.current = false;
         stream = await navigator.mediaDevices.getUserMedia({
           video: {
-            facingMode: "user",
-            width: { ideal: 640 },
-            height: { ideal: 360 },
+            facingMode: "environment",
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
             frameRate: { ideal: 24, max: 30 },
           },
           audio: false,
         });
+      } else {
+        feedMirroredRef.current = true;
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: {
+              facingMode: "user",
+              width: { ideal: 640 },
+              height: { ideal: 360 },
+              frameRate: { ideal: 24, max: 30 },
+            },
+            audio: false,
+          });
+        } catch {
+          stream = await startMindARCamera();
+        }
       }
 
       streamRef.current = stream;
       workerReadyRef.current = false;
-      initWorker();
+      if (!nextMobileArMode) {
+        initWorker();
+      }
 
       const video = videoRef.current;
       if (!video) throw new Error("Camera element not found.");
@@ -653,7 +866,7 @@ const GestureControlOverlay = () => {
       setEnabled(true);
       setStarting(false);
 
-      if (workerReadyRef.current) {
+      if (!nextMobileArMode && workerReadyRef.current) {
         document.body.classList.add("gesture-mode-active");
       }
 
@@ -669,19 +882,30 @@ const GestureControlOverlay = () => {
       lastDetectPostAtRef.current = 0;
       lastClickAtRef.current = 0;
       isPinchingRef.current = false;
+      isFistRef.current = false;
       prevPinchingRef.current = false;
+      prevFistRef.current = false;
       prevPinchYRef.current = 0;
       pinchStartYRef.current = 0;
       initialScrollYRef.current = 0;
+      lockedTargetRef.current = null;
+      lockUntilRef.current = 0;
+      fistTriggeredRef.current = false;
       handDetectedRef.current = false;
 
       document.documentElement.classList.add("gesture-ar-mode");
       document.body.classList.add("gesture-ar-mode");
+      if (nextMobileArMode) {
+        document.documentElement.classList.add("gesture-ar-mobile-mode");
+        document.body.classList.add("gesture-ar-mobile-mode");
+      }
       document.getElementById("root")?.classList.add("gesture-ar-mode");
 
-      if (navbarSmoother) navbarSmoother.paused(false);
-      cursorRafIdRef.current = window.requestAnimationFrame(animateCursor);
-      workerRafIdRef.current = window.requestAnimationFrame(animateWorker);
+      if (navbarSmoother && !nextMobileArMode) navbarSmoother.paused(false);
+      if (!nextMobileArMode) {
+        cursorRafIdRef.current = window.requestAnimationFrame(animateCursor);
+        workerRafIdRef.current = window.requestAnimationFrame(animateWorker);
+      }
     } catch (err) {
       setStarting(false);
       setEnabled(false);
@@ -694,7 +918,9 @@ const GestureControlOverlay = () => {
     enabledRef.current = false;
 
     document.documentElement.classList.remove("gesture-ar-mode");
+    document.documentElement.classList.remove("gesture-ar-mobile-mode");
     document.body.classList.remove("gesture-ar-mode");
+    document.body.classList.remove("gesture-ar-mobile-mode");
     document.body.classList.remove("gesture-mode-active");
     document.getElementById("root")?.classList.remove("gesture-ar-mode");
 
@@ -748,14 +974,22 @@ const GestureControlOverlay = () => {
   };
 
   useEffect(() => {
+    const handleResize = () => {
+      setMobileArMode(isMobileTouchViewport());
+    };
+
+    window.addEventListener("resize", handleResize);
     return () => {
+      window.removeEventListener("resize", handleResize);
       disable();
       if (workerRef.current) {
         workerRef.current.terminate();
         workerRef.current = null;
       }
       document.documentElement.classList.remove("gesture-ar-mode");
+      document.documentElement.classList.remove("gesture-ar-mobile-mode");
       document.body.classList.remove("gesture-ar-mode");
+      document.body.classList.remove("gesture-ar-mobile-mode");
       document.body.classList.remove("gesture-mode-active");
       document.getElementById("root")?.classList.remove("gesture-ar-mode");
     };
@@ -764,16 +998,20 @@ const GestureControlOverlay = () => {
   return (
     <>
       <div className="gesture-overlay-root" style={{ pointerEvents: "none" }}>
+        <MobileARScene active={enabled && mobileArMode} />
         <video
           ref={videoRef}
-          className={`gesture-overlay-camera ${enabled ? "gesture-overlay-camera-active" : ""}`}
+          className={`gesture-overlay-camera ${enabled ? "gesture-overlay-camera-active" : ""} ${mobileArMode ? "gesture-overlay-camera-back" : ""}`}
+          playsInline
+          autoPlay
+          muted
           style={{ pointerEvents: "none" }}
           aria-hidden
         />
         <div
           id="virtual-cursor"
           ref={cursorRef}
-          className={`gesture-overlay-cursor ${enabled ? "visible" : ""}`}
+          className={`gesture-overlay-cursor ${enabled && !mobileArMode ? "visible" : ""}`}
           style={{
             position: "fixed",
             width: "12px",
@@ -788,31 +1026,35 @@ const GestureControlOverlay = () => {
       </div>
 
       <div className="gesture-overlay-ui-layer">
-        <button
-          type="button"
-          className="gesture-overlay-toggle"
-          onClick={() => {
-            if (enabled) disable();
-            else void enable();
-          }}
-          data-gesture-ui
-        >
-          {starting
-            ? "Opening Immersive View..."
-            : enabled
-              ? "Disable Camera Magic"
-              : "Explore The Magic With Your Camera"}
-        </button>
+        {!mobileArMode ? (
+          <button
+            type="button"
+            className="gesture-overlay-toggle"
+            onClick={() => {
+              if (enabled) disable();
+              else void enable();
+            }}
+            data-gesture-ui
+          >
+            {starting
+              ? "Opening Immersive View..."
+              : enabled
+                ? "Disable Camera Magic"
+                : "Explore The Magic With Your Camera"}
+          </button>
+        ) : null}
 
         {enabled ? (
           <div className="gesture-overlay-status" data-gesture-ui>
-            {handDetected
-              ? "Hand detected: point to explore, pinch to click and scroll."
-              : "Raise one hand to begin immersive controls."}
+            {mobileArMode
+              ? "Rear camera mode active. Use touch to navigate."
+              : handDetected
+                ? "Hand detected: point to aim, make a fist to click, and pinch-drag to scroll."
+                : "Raise one hand to begin immersive controls."}
           </div>
         ) : null}
 
-        {error ? (
+        {error && !mobileArMode ? (
           <div className="gesture-overlay-error" data-gesture-ui>
             {error}
           </div>

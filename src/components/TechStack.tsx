@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { useRef, useMemo, useState, useEffect } from "react";
+import { useRef, useMemo, useState, useEffect, type MutableRefObject } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Environment } from "@react-three/drei";
 import {
@@ -10,6 +10,8 @@ import {
   RapierRigidBody,
 } from "@react-three/rapier";
 import PretextReveal from "./ui/PretextReveal";
+
+type MotionInput = { x: number; y: number; shake: number };
 
 const SKILLS = [
   "SQL",
@@ -61,6 +63,8 @@ type SphereProps = {
   material: THREE.MeshPhysicalMaterial;
   initialPosition: [number, number, number];
   isActive: boolean;
+  motionRef: MutableRefObject<MotionInput>;
+  isMobileMotion: boolean;
 };
 
 function SphereGeo({
@@ -69,6 +73,8 @@ function SphereGeo({
   material,
   initialPosition,
   isActive,
+  motionRef,
+  isMobileMotion,
 }: SphereProps) {
   const api = useRef<RapierRigidBody | null>(null);
 
@@ -87,6 +93,19 @@ function SphereGeo({
       );
 
     api.current.applyImpulse(impulse, true);
+
+    const tiltX = isMobileMotion ? motionRef.current.x : 0;
+    const tiltY = isMobileMotion ? motionRef.current.y : 0;
+    const shake = isMobileMotion ? motionRef.current.shake : 0;
+
+    api.current.applyImpulse(
+      new THREE.Vector3(
+        tiltX * 26 * delta,
+        -tiltY * 34 * delta + shake * 22 * delta,
+        0
+      ),
+      true
+    );
   });
 
   return (
@@ -120,17 +139,26 @@ function SphereGeo({
 type PointerProps = {
   vec?: THREE.Vector3;
   isActive: boolean;
+  motionRef: MutableRefObject<MotionInput>;
+  isMobileMotion: boolean;
 };
 
-function Pointer({ vec = new THREE.Vector3(), isActive }: PointerProps) {
+function Pointer({
+  vec = new THREE.Vector3(),
+  isActive,
+  motionRef,
+  isMobileMotion,
+}: PointerProps) {
   const ref = useRef<RapierRigidBody>(null);
 
   useFrame(({ pointer, viewport }) => {
     if (!isActive) return;
+    const sourceX = isMobileMotion ? motionRef.current.x : pointer.x;
+    const sourceY = isMobileMotion ? motionRef.current.y : pointer.y;
     const targetVec = vec.lerp(
       new THREE.Vector3(
-        (pointer.x * viewport.width) / 2,
-        (pointer.y * viewport.height) / 2,
+        (sourceX * viewport.width) / 2,
+        (sourceY * viewport.height) / 2,
         0
       ),
       0.14
@@ -190,33 +218,136 @@ function MovingLights() {
 }
 
 const TechStack = () => {
+  const stackRef = useRef<HTMLDivElement | null>(null);
+  const motionRef = useRef<MotionInput>({ x: 0, y: 0, shake: 0 });
+  const baselineRef = useRef<{ gamma: number; beta: number } | null>(null);
+
   const [isActive, setIsActive] = useState(false);
+  const [isMobileMotion, setIsMobileMotion] = useState(window.innerWidth <= 1024);
+  const [isPhoneViewport, setIsPhoneViewport] = useState(window.innerWidth <= 767);
+  const [gyroEnabled, setGyroEnabled] = useState(
+    () => localStorage.getItem("gyro-enabled") === "1"
+  );
+  const [gestureCursorActive, setGestureCursorActive] = useState(false);
+
+  const mobileGyroActive = isMobileMotion && gyroEnabled;
+  const handCursorActive = !isMobileMotion && gestureCursorActive;
+  const effectiveActive = isActive || mobileGyroActive || handCursorActive;
 
   useEffect(() => {
-    const handleScroll = () => {
-      const scrollY = window.scrollY || document.documentElement.scrollTop;
-      const workTop = document.getElementById("work")?.getBoundingClientRect().top ?? 0;
-      setIsActive(scrollY > workTop);
-    };
-
-    const navLinks = document.querySelectorAll(".header a");
-    navLinks.forEach((elem) => {
-      const element = elem as HTMLAnchorElement;
-      element.addEventListener("click", () => {
-        const interval = setInterval(() => {
-          handleScroll();
-        }, 16);
-        setTimeout(() => {
-          clearInterval(interval);
-        }, 1200);
-      });
-    });
-
-    window.addEventListener("scroll", handleScroll);
+    const element = stackRef.current;
+    if (!element) {
+      setIsActive(true);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        setIsActive(entry.isIntersecting || entry.intersectionRatio > 0.15);
+      },
+      { threshold: [0.15, 0.35, 0.6] }
+    );
+    observer.observe(element);
     return () => {
-      window.removeEventListener("scroll", handleScroll);
+      observer.disconnect();
     };
   }, []);
+
+  useEffect(() => {
+    const onGestureCursor = (event: Event) => {
+      const detail = (event as CustomEvent<{
+        x?: number;
+        y?: number;
+        active?: boolean;
+      }>).detail;
+
+      const active = Boolean(detail?.active);
+      setGestureCursorActive(active);
+      if (!active || isMobileMotion) return;
+
+      const x = Number(detail?.x ?? window.innerWidth * 0.5);
+      const y = Number(detail?.y ?? window.innerHeight * 0.5);
+      const nx = THREE.MathUtils.clamp((x / window.innerWidth) * 2 - 1, -1, 1);
+      const ny = THREE.MathUtils.clamp(-((y / window.innerHeight) * 2 - 1), -1, 1);
+      motionRef.current.x = THREE.MathUtils.lerp(motionRef.current.x, nx, 0.55);
+      motionRef.current.y = THREE.MathUtils.lerp(motionRef.current.y, ny, 0.55);
+      motionRef.current.shake = THREE.MathUtils.lerp(motionRef.current.shake, 0, 0.25);
+    };
+
+    window.addEventListener("gesture-cursor", onGestureCursor as EventListener);
+    return () =>
+      window.removeEventListener("gesture-cursor", onGestureCursor as EventListener);
+  }, [isMobileMotion]);
+
+  useEffect(() => {
+    const onResize = () => {
+      setIsMobileMotion(window.innerWidth <= 1024);
+      setIsPhoneViewport(window.innerWidth <= 767);
+    };
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  useEffect(() => {
+    const handleGyroChange = (event: Event) => {
+      const detail = (event as CustomEvent<{ enabled?: boolean }>).detail;
+      const enabled = Boolean(detail?.enabled);
+      setGyroEnabled(enabled);
+      if (!enabled) {
+        baselineRef.current = null;
+        motionRef.current = { x: 0, y: 0, shake: 0 };
+      }
+    };
+
+    window.addEventListener("gyro-control-change", handleGyroChange as EventListener);
+    return () =>
+      window.removeEventListener("gyro-control-change", handleGyroChange as EventListener);
+  }, []);
+
+  useEffect(() => {
+    if (!mobileGyroActive) {
+      baselineRef.current = null;
+      motionRef.current = { x: 0, y: 0, shake: 0 };
+      return;
+    }
+
+    const onOrientation = (event: DeviceOrientationEvent) => {
+      const gamma = event.gamma ?? 0;
+      const beta = event.beta ?? 0;
+
+      if (!baselineRef.current) {
+        baselineRef.current = { gamma, beta };
+        return;
+      }
+
+      const deltaGamma = gamma - baselineRef.current.gamma;
+      const deltaBeta = beta - baselineRef.current.beta;
+
+      const x = THREE.MathUtils.clamp(deltaGamma / 34, -1, 1);
+      const y = THREE.MathUtils.clamp(-deltaBeta / 46, -1, 1);
+
+      motionRef.current.x = THREE.MathUtils.lerp(motionRef.current.x, x, 0.2);
+      motionRef.current.y = THREE.MathUtils.lerp(motionRef.current.y, y, 0.2);
+    };
+
+    const onMotion = (event: DeviceMotionEvent) => {
+      const acc = event.accelerationIncludingGravity;
+      if (!acc) return;
+      const magnitude = Math.sqrt(
+        (acc.x ?? 0) ** 2 + (acc.y ?? 0) ** 2 + (acc.z ?? 0) ** 2
+      );
+      const shake = THREE.MathUtils.clamp((magnitude - 12.5) / 17, 0, 1);
+      motionRef.current.shake = THREE.MathUtils.lerp(motionRef.current.shake, shake, 0.16);
+    };
+
+    window.addEventListener("deviceorientation", onOrientation);
+    window.addEventListener("devicemotion", onMotion);
+
+    return () => {
+      window.removeEventListener("deviceorientation", onOrientation);
+      window.removeEventListener("devicemotion", onMotion);
+    };
+  }, [mobileGyroActive]);
 
   const materials = useMemo(() => {
     return SKILLS.map((skill) => {
@@ -273,7 +404,7 @@ const TechStack = () => {
         fontSize -= 4;
       } while (ctx.measureText(skill).width > maxTextWidth && fontSize > 58);
 
-      ctx.fillText(skill, canvas.width / 2, canvas.height / 2 + 4);
+      ctx.fillText(skill, canvas.width * 0.25, canvas.height / 2 + 4);
 
       const texture = new THREE.CanvasTexture(canvas);
       texture.colorSpace = THREE.SRGBColorSpace;
@@ -290,7 +421,7 @@ const TechStack = () => {
   }, []);
 
   return (
-    <div className="techstack">
+    <div className="techstack" ref={stackRef}>
       <PretextReveal as="h2" text="My Skillset" />
 
       <Canvas
@@ -306,20 +437,25 @@ const TechStack = () => {
       >
         <ambientLight intensity={0.64} />
         <MovingLights />
-        <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[0, -4.8, 0]}>
-          <planeGeometry args={[50, 50]} />
-          <shadowMaterial transparent opacity={0.26} />
-        </mesh>
         <Physics gravity={[0, 0, 0]}>
-          <Pointer isActive={isActive} />
-          <group position={[0, -1.05, 0]}>
+          <Pointer
+            isActive={effectiveActive}
+            motionRef={motionRef}
+            isMobileMotion={mobileGyroActive || handCursorActive}
+          />
+          <group
+            position={[0, isPhoneViewport ? -2.35 : -1.05, 0]}
+            scale={isPhoneViewport ? 1.06 : 1}
+          >
             {sphereConfigs.map((props, i) => (
               <SphereGeo
                 key={i}
                 scale={props.scale}
                 material={materials[props.materialIndex]}
                 initialPosition={props.initialPosition}
-                isActive={isActive}
+                isActive={effectiveActive}
+                motionRef={motionRef}
+                isMobileMotion={mobileGyroActive || handCursorActive}
               />
             ))}
           </group>

@@ -43,7 +43,8 @@ export const handleHeadRotation = (
   lerp: (x: number, y: number, t: number) => number
 ) => {
   if (!headBone) return;
-  if (window.scrollY < 200) {
+  const isMobile = window.innerWidth <= 1024;
+  if (isMobile || window.scrollY < 200) {
     const maxRotation = Math.PI / 6;
     headBone.rotation.y = lerp(
       headBone.rotation.y,

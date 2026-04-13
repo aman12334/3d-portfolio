@@ -5,7 +5,12 @@ import gsap from "gsap";
 const Cursor = () => {
   const cursorRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
+    if (window.innerWidth < 768) {
+      return;
+    }
+
     let hover = false;
+    let gestureLocked = false;
     const cursor = cursorRef.current!;
     const mousePos = { x: 0, y: 0 };
     const cursorPos = { x: 0, y: 0 };
@@ -13,12 +18,28 @@ const Cursor = () => {
       mousePos.x = e.clientX;
       mousePos.y = e.clientY;
     });
+
+    const onGestureCursor = (
+      e: Event & {
+        detail?: { x?: number; y?: number; active?: boolean };
+      }
+    ) => {
+      const detail = e.detail;
+      if (!detail) return;
+      gestureLocked = Boolean(detail.active);
+      if (gestureLocked && typeof detail.x === "number" && typeof detail.y === "number") {
+        mousePos.x = detail.x;
+        mousePos.y = detail.y;
+      }
+    };
+    window.addEventListener("gesture-cursor", onGestureCursor as EventListener);
+
     requestAnimationFrame(function loop() {
       if (!hover) {
-        const delay = 6;
+        const delay = gestureLocked ? 1.9 : 6;
         cursorPos.x += (mousePos.x - cursorPos.x) / delay;
         cursorPos.y += (mousePos.y - cursorPos.y) / delay;
-        gsap.to(cursor, { x: cursorPos.x, y: cursorPos.y, duration: 0.1 });
+        gsap.to(cursor, { x: cursorPos.x, y: cursorPos.y, duration: gestureLocked ? 0.04 : 0.1 });
         // cursor.style.transform = `translate(${cursorPos.x}px, ${cursorPos.y}px)`;
       }
       requestAnimationFrame(loop);
@@ -46,6 +67,10 @@ const Cursor = () => {
         hover = false;
       });
     });
+
+    return () => {
+      window.removeEventListener("gesture-cursor", onGestureCursor as EventListener);
+    };
   }, []);
 
   return <div className="cursor-main" ref={cursorRef}></div>;

@@ -21,6 +21,7 @@ if (typeof self.import !== "function") {
 let handLandmarker = null;
 let initialized = false;
 let pinchActive = false;
+let fistActive = false;
 let frameCounter = 0;
 
 const postWorkerError = (message) => {
@@ -31,7 +32,9 @@ const initHandLandmarker = async (
   wasmRoots = [],
   modelUrls = [],
   numHands = 1,
-  runningMode = "VIDEO"
+  runningMode = "VIDEO",
+  minHandDetectionConfidence = 0.35,
+  minTrackingConfidence = 0.35
 ) => {
   let vision = null;
   let lastErr = null;
@@ -62,6 +65,8 @@ const initHandLandmarker = async (
         baseOptions: { modelAssetPath, delegate: "CPU" },
         runningMode,
         numHands,
+        minHandDetectionConfidence,
+        minTrackingConfidence,
       });
       if (created) break;
     } catch (err) {
@@ -88,7 +93,9 @@ self.onmessage = async (event) => {
         msg.wasmRoots || [],
         msg.modelUrls || [],
         msg.numHands || 1,
-        msg.runningMode || "VIDEO"
+        msg.runningMode || "VIDEO",
+        msg.minHandDetectionConfidence ?? 0.5,
+        msg.minTrackingConfidence ?? 0.5
       );
       self.postMessage({ type: "ready" });
       return;
@@ -115,14 +122,43 @@ self.onmessage = async (event) => {
     const firstHand = result?.landmarks?.[0];
     if (!firstHand?.length) {
       pinchActive = false;
+      fistActive = false;
       self.postMessage({ type: "NO_HAND" });
       return;
     }
 
+    const wrist = firstHand[0];
     const thumbTip = firstHand[4];
+    const indexMcp = firstHand[5];
+    const indexPip = firstHand[6];
     const indexTip = firstHand[8];
-    if (!thumbTip || !indexTip) {
+    const middleMcp = firstHand[9];
+    const middlePip = firstHand[10];
+    const middleTip = firstHand[12];
+    const ringMcp = firstHand[13];
+    const ringPip = firstHand[14];
+    const ringTip = firstHand[16];
+    const pinkyMcp = firstHand[17];
+    const pinkyPip = firstHand[18];
+    const pinkyTip = firstHand[20];
+    if (
+      !wrist ||
+      !thumbTip ||
+      !indexMcp ||
+      !indexPip ||
+      !indexTip ||
+      !middleMcp ||
+      !middlePip ||
+      !middleTip ||
+      !ringMcp ||
+      !ringPip ||
+      !ringTip ||
+      !pinkyMcp ||
+      !pinkyPip ||
+      !pinkyTip
+    ) {
       pinchActive = false;
+      fistActive = false;
       self.postMessage({ type: "NO_HAND" });
       return;
     }
@@ -136,13 +172,41 @@ self.onmessage = async (event) => {
       console.log("Pinch Distance:", pinchDistance);
     }
 
-    pinchActive = pinchActive ? pinchDistance < 0.08 : pinchDistance < 0.06;
+    // Make pinch activation a little more forgiving on laptop webcams while
+    // still keeping enough hysteresis to avoid rapid accidental toggles.
+    pinchActive = pinchActive ? pinchDistance < 0.11 : pinchDistance < 0.085;
+
+    const handSpan = Math.hypot(
+      indexMcp.x - pinkyMcp.x,
+      indexMcp.y - pinkyMcp.y,
+      indexMcp.z - pinkyMcp.z
+    );
+    const isFingerCurled = (tip, pip, mcp) => {
+      const tipToWrist = Math.hypot(tip.x - wrist.x, tip.y - wrist.y, tip.z - wrist.z);
+      const mcpToWrist = Math.hypot(mcp.x - wrist.x, mcp.y - wrist.y, mcp.z - wrist.z);
+      return tip.y > pip.y && tipToWrist < mcpToWrist * 1.12;
+    };
+    const curledCount = [
+      isFingerCurled(indexTip, indexPip, indexMcp),
+      isFingerCurled(middleTip, middlePip, middleMcp),
+      isFingerCurled(ringTip, ringPip, ringMcp),
+      isFingerCurled(pinkyTip, pinkyPip, pinkyMcp),
+    ].filter(Boolean).length;
+    const thumbToPalm = Math.hypot(
+      thumbTip.x - indexMcp.x,
+      thumbTip.y - indexMcp.y,
+      thumbTip.z - indexMcp.z
+    );
+    const fistDetected =
+      curledCount >= 4 && handSpan < 0.24 && thumbToPalm < Math.max(0.16, handSpan * 0.95);
+    fistActive = fistActive ? fistDetected : curledCount >= 4 && handSpan < 0.22;
 
     self.postMessage({
       type: "HAND_DATA",
       x: indexTip.x,
       y: indexTip.y,
       isPinching: pinchActive,
+      isFist: fistActive,
     });
   } catch (err) {
     postWorkerError(err instanceof Error ? err.message : "Unknown worker error");
