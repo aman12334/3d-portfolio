@@ -21,20 +21,27 @@ const Scene = () => {
 
   useEffect(() => {
     if (canvasDiv.current) {
+      let isDisposed = false;
+      let frameId = 0;
       let rect = canvasDiv.current.getBoundingClientRect();
       let container = { width: rect.width, height: rect.height };
       const aspect = container.width / container.height;
       const scene = sceneRef.current;
+      const mountNode = canvasDiv.current;
+
+      // Ensure only one renderer canvas is attached per mount.
+      mountNode.querySelectorAll("canvas").forEach((canvas) => canvas.remove());
 
       const renderer = new THREE.WebGLRenderer({
         alpha: true,
         antialias: true,
       });
       renderer.setSize(container.width, container.height);
-      renderer.setPixelRatio(window.devicePixelRatio);
+      const targetPixelRatio = window.innerWidth <= 1024 ? 1.5 : 2;
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, targetPixelRatio));
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
       renderer.toneMappingExposure = 1;
-      canvasDiv.current.appendChild(renderer.domElement);
+      mountNode.appendChild(renderer.domElement);
 
       const camera = new THREE.PerspectiveCamera(14.5, aspect, 0.1, 1000);
       camera.position.z = 10;
@@ -80,6 +87,7 @@ const Scene = () => {
       }, 6000);
 
       loadCharacter().then((gltf) => {
+        if (isDisposed) return;
         if (gltf) {
           const animations = setAnimations(gltf);
           animationsRef.current = animations;
@@ -122,14 +130,17 @@ const Scene = () => {
       let orientationBaseline: { gamma: number; beta: number } | null = null;
 
       const onMouseMove = (event: MouseEvent) => {
+        if (isMobileView() && gyroEnabled) return;
         handleMouseMove(event, (x, y) => (mouse = { x, y }));
       };
       let debounce: number | undefined;
       let activeTouchTarget: HTMLElement | null = null;
       const onTouchMove = (e: TouchEvent) => {
+        if (isMobileView() && gyroEnabled) return;
         handleTouchMove(e, (x, y) => (mouse = { x, y }));
       };
       const onTouchStart = (event: TouchEvent) => {
+        if (isMobileView() && gyroEnabled) return;
         activeTouchTarget = event.currentTarget as HTMLElement;
         debounce = setTimeout(() => {
           activeTouchTarget?.addEventListener("touchmove", onTouchMove);
@@ -137,6 +148,7 @@ const Scene = () => {
       };
 
       const onTouchEnd = () => {
+        if (isMobileView() && gyroEnabled) return;
         if (activeTouchTarget) {
           activeTouchTarget.removeEventListener("touchmove", onTouchMove);
         }
@@ -153,6 +165,8 @@ const Scene = () => {
         gyroEnabled = Boolean(detail?.enabled);
         orientationBaseline = null;
         motionInput = { x: 0, y: 0, shake: 0 };
+        mouse = { x: 0, y: gyroEnabled ? -0.262 : 0 };
+        interpolation = { x: gyroEnabled ? 0.2 : 0.1, y: gyroEnabled ? 0.2 : 0.2 };
       };
 
       const onDeviceOrientation = (event: DeviceOrientationEvent) => {
@@ -166,7 +180,7 @@ const Scene = () => {
         const deltaGamma = gamma - orientationBaseline.gamma;
         const deltaBeta = beta - orientationBaseline.beta;
         const nextX = THREE.MathUtils.clamp(deltaGamma / 34, -1, 1);
-        const nextY = THREE.MathUtils.clamp(-deltaBeta / 46, -1, 1);
+        const nextY = THREE.MathUtils.clamp(-deltaBeta / 46 - 0.262, -1, 1);
         motionInput = {
           ...motionInput,
           x: THREE.MathUtils.lerp(motionInput.x, nextX, 0.2),
@@ -196,7 +210,8 @@ const Scene = () => {
         landingDiv.addEventListener("touchend", onTouchEnd);
       }
       const animate = () => {
-        requestAnimationFrame(animate);
+        if (isDisposed) return;
+        frameId = requestAnimationFrame(animate);
         if (headBone) {
           handleHeadRotation(
             headBone,
@@ -208,8 +223,8 @@ const Scene = () => {
           );
           if (isMobileView() && gyroEnabled) {
             const elapsed = clock.getElapsedTime();
-            const shakeX = motionInput.shake * 0.018 * Math.sin(elapsed * 18);
-            const shakeY = motionInput.shake * 0.014 * Math.cos(elapsed * 15);
+            const shakeX = motionInput.shake * 0.008 * Math.sin(elapsed * 18);
+            const shakeY = motionInput.shake * 0.006 * Math.cos(elapsed * 15);
             headBone.rotation.y += shakeY;
             headBone.rotation.x += shakeX;
 
@@ -236,6 +251,10 @@ const Scene = () => {
       };
       animate();
       return () => {
+        isDisposed = true;
+        if (frameId) {
+          window.cancelAnimationFrame(frameId);
+        }
         window.clearTimeout(loaderFallbackTimer);
         clearTimeout(debounce);
         scene.clear();
@@ -243,8 +262,8 @@ const Scene = () => {
         if (onResize) {
           window.removeEventListener("resize", onResize);
         }
-        if (canvasDiv.current) {
-          canvasDiv.current.removeChild(renderer.domElement);
+        if (mountNode.contains(renderer.domElement)) {
+          mountNode.removeChild(renderer.domElement);
         }
         document.removeEventListener("mousemove", onMouseMove);
         if (landingDiv) {

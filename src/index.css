@@ -157,12 +157,13 @@ body {
 
 @media screen and (max-width: 900px) {
   .techstack {
-    height: auto;
-    min-height: 640px;
-    padding-top: 92px;
+    height: max(620px, calc(var(--vh) - 24px));
+    min-height: 620px;
+    padding-top: 84px;
     box-sizing: border-box;
     margin-top: 20px;
-    margin-bottom: -140px;
+    margin-bottom: -22px;
+    overflow: clip;
   }
 
   .techstack h2 {
@@ -171,7 +172,9 @@ body {
   }
 
   .tech-canvas {
-    height: calc(100% - 72px) !important;
+    display: block;
+    height: calc(100% - 36px) !important;
+    min-height: 520px;
   }
 }
 

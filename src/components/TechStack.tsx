@@ -52,7 +52,7 @@ const initialLayout: Array<[number, number, number]> = [
 ];
 
 const sphereConfigs = SKILLS.map((_, index) => ({
-  scale: 1.02,
+  scale: 0.82,
   materialIndex: index % SKILLS.length,
   initialPosition: initialLayout[index] ?? [0, 0, 1],
 }));
@@ -397,14 +397,14 @@ const TechStack = () => {
       ctx.fillStyle = "#0f2f5f";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      let fontSize = 118;
+      let fontSize = isPhoneViewport ? 146 : 118;
       const maxTextWidth = w - 150;
       do {
         ctx.font = `700 ${fontSize}px Geist, sans-serif`;
         fontSize -= 4;
       } while (ctx.measureText(skill).width > maxTextWidth && fontSize > 58);
 
-      ctx.fillText(skill, canvas.width * 0.25, canvas.height / 2 + 4);
+      ctx.fillText(skill, canvas.width * 0.5, canvas.height / 2 + 4);
 
       const texture = new THREE.CanvasTexture(canvas);
       texture.colorSpace = THREE.SRGBColorSpace;
@@ -418,7 +418,7 @@ const TechStack = () => {
         envMapIntensity: 0.9,
       });
     });
-  }, []);
+  }, [isPhoneViewport]);
 
   return (
     <div className="techstack" ref={stackRef}>
@@ -444,8 +444,8 @@ const TechStack = () => {
             isMobileMotion={mobileGyroActive || handCursorActive}
           />
           <group
-            position={[0, isPhoneViewport ? -2.35 : -1.05, 0]}
-            scale={isPhoneViewport ? 1.06 : 1}
+            position={[0, isPhoneViewport ? -2.05 : -1.05, 0]}
+            scale={isPhoneViewport ? 1.22 : 1}
           >
             {sphereConfigs.map((props, i) => (
               <SphereGeo
