@@ -127,9 +127,11 @@ const Scene = () => {
         interpolation = { x: 0.1, y: 0.2 };
       let motionInput = { x: 0, y: 0, shake: 0 };
       let gyroEnabled = localStorage.getItem("gyro-enabled") === "1";
+      let gestureCursorActive = false;
       let orientationBaseline: { gamma: number; beta: number } | null = null;
 
       const onMouseMove = (event: MouseEvent) => {
+        if (gestureCursorActive) return;
         if (isMobileView() && gyroEnabled) return;
         handleMouseMove(event, (x, y) => (mouse = { x, y }));
       };
@@ -169,6 +171,23 @@ const Scene = () => {
         interpolation = { x: gyroEnabled ? 0.2 : 0.1, y: gyroEnabled ? 0.2 : 0.2 };
       };
 
+      const onGestureCursor = (event: Event) => {
+        const detail = (event as CustomEvent<{ x?: number; y?: number; active?: boolean }>).detail;
+        const active = Boolean(detail?.active);
+        gestureCursorActive = active;
+        if (!active || isMobileView()) return;
+
+        const x = Number(detail?.x ?? window.innerWidth * 0.5);
+        const y = Number(detail?.y ?? window.innerHeight * 0.5);
+        const nx = THREE.MathUtils.clamp((x / window.innerWidth) * 2 - 1, -1, 1);
+        const ny = THREE.MathUtils.clamp(-((y / window.innerHeight) * 2 - 1), -1, 1);
+        mouse = {
+          x: THREE.MathUtils.lerp(mouse.x, nx, 0.55),
+          y: THREE.MathUtils.lerp(mouse.y, ny, 0.55),
+        };
+        interpolation = { x: 0.18, y: 0.18 };
+      };
+
       const onDeviceOrientation = (event: DeviceOrientationEvent) => {
         if (!isMobileView() || !gyroEnabled) return;
         const gamma = event.gamma ?? 0;
@@ -204,6 +223,7 @@ const Scene = () => {
       window.addEventListener("deviceorientation", onDeviceOrientation);
       window.addEventListener("devicemotion", onDeviceMotion);
       window.addEventListener("gyro-control-change", onGyroControlChange as EventListener);
+      window.addEventListener("gesture-cursor", onGestureCursor as EventListener);
       const landingDiv = document.getElementById("landingDiv");
       if (landingDiv) {
         landingDiv.addEventListener("touchstart", onTouchStart);
@@ -274,6 +294,7 @@ const Scene = () => {
         window.removeEventListener("deviceorientation", onDeviceOrientation);
         window.removeEventListener("devicemotion", onDeviceMotion);
         window.removeEventListener("gyro-control-change", onGyroControlChange as EventListener);
+        window.removeEventListener("gesture-cursor", onGestureCursor as EventListener);
       };
     }
   }, []);
